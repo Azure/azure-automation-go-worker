@@ -2,7 +2,7 @@ package gpg
 
 import (
 	"fmt"
-	"github.com/Azure/guestaction-extension-linux/pkg/executil"
+	"github.com/Azure/azure-automation-go-worker/pkg/executil"
 )
 
 const (
@@ -17,14 +17,8 @@ const (
 
 var cmdHandler executil.Handler = executil.GetCommandHandler()
 
-// Overwrite this value to mock the test
-
-func VerifySignature(signedFilePath string, outputFilePath string, keyrings []string) (success bool, err error) {
-	/* Verifies a files's signature
-	Returns:
-		err == nil if there is an error
-		err != nil an error was encountered
-	*/
+// Verifies a files's signature
+func IsSignatureValid(signedFilePath string, outputFilePath string, keyrings []string) (bool, error) {
 	if (len(keyrings) == 0) || (len(keyrings) == 1 && keyrings[0] == "TODO: get default keyring path") {
 		return false, NewKeyringNotConfiguredError("GPG kerying path was empty")
 	}
@@ -46,7 +40,7 @@ func VerifySignature(signedFilePath string, outputFilePath string, keyrings []st
 		cmdHandler.Execute(&cmd)
 
 		ret := cmd.ExitCode
-		err = cmd.CommandError
+		err := cmd.CommandError
 
 		if err != nil {
 			// TODO: trace signature validation success
@@ -58,5 +52,6 @@ func VerifySignature(signedFilePath string, outputFilePath string, keyrings []st
 		return true, nil
 		// TODO: trace signature validation failure
 	}
-	return false, NewValidationFailedForAllKeyringsError("No GPG keyring was able to verify the signed file")
+	//No GPG keyring was able to verify the signed file
+	return false, nil
 }
