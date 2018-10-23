@@ -3,6 +3,7 @@ package gpg
 type KeyringNotConfiguredError struct {
 	message string
 }
+
 type GpgExecuteError struct {
 	message string
 }

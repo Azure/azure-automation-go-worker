@@ -13,18 +13,19 @@ const (
 	GPG_NO_DEFAULT_KEYRING_OPTION = "--no-default-keyring"
 	GPG_OUTPUT_OPTION             = "--output"
 	GPG_YES_OPTION                = "--yes"
+	GPG_DEFAULT_KEYRING_PATH      = "" // TODO: Get this value from configuration
 )
 
 var cmdHandler executil.Handler = executil.GetCommandHandler()
 
 // Verifies a files's signature
 func IsSignatureValid(signedFilePath string, outputFilePath string, keyrings []string) (bool, error) {
-	if (len(keyrings) == 0) || (len(keyrings) == 1 && keyrings[0] == "TODO: get default keyring path") {
+	if (len(keyrings) == 0) || (len(keyrings) == 1 && keyrings[0] == GPG_DEFAULT_KEYRING_PATH) {
 		return false, NewKeyringNotConfiguredError("GPG kerying path was empty")
 	}
 
 	for _, keyringPath := range keyrings {
-		if keyringPath == "" || keyringPath == "TODO: get default keyring path" {
+		if keyringPath == "" || keyringPath == GPG_DEFAULT_KEYRING_PATH {
 			continue
 		}
 		args := make([]string, 0, 10)
