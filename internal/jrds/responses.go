@@ -19,6 +19,10 @@ type JobAction struct {
 	JobId           *string          `json:"JobId"`
 }
 
+type MessageMetadatas struct{
+	MessageMetadatas []MessageMetadata `json:"MessageMetadatas"`
+}
+
 type JobData struct {
 	RunbookVersionId *string `json:"runbookVersionId"`
 }

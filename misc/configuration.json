@@ -1,0 +1,23 @@
+{
+  "jrds_cert_path" : "",
+  "jrds_key_path" : "",
+  "jrds_base_uri" : "",
+
+  "account_id" : "",
+  "machine_id" : "",
+  "hybrid_worker_group_name" : "",
+  "worker_version" : "",
+  "working_directory_path" : "",
+
+  "debug_traces" : "",
+  "bypass_certificate_verification" : "",
+  "enforce_runbook_signature_validation" : "",
+  "gpg_public_keyring_path" : "",
+  "state_directory_path" : "",
+  "jrds_polling_frequency" : "",
+  "proxy_configuration_path" : "",
+
+  "vm_id" : "",
+  "is_azure_vm" : "",
+  "worker_type" : ""
+}
