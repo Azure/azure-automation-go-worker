@@ -97,8 +97,9 @@ type Log struct {
 }
 
 type UnloadJob struct {
-	IsTest         *bool   `json:"isTest"`
-	JobId          *string `json:"jobId"`
-	StartTime      *string `json:"startTime"`
-	SubscriptionId *string `json:"subscriptionId"`
+	IsTest                 *bool   `json:"isTest"`
+	JobId                  *string `json:"jobId"`
+	StartTime              *string `json:"startTime"`
+	SubscriptionId         *string `json:"subscriptionId"`
+	ExecutionTimeInSeconds *int    `json:"executionTimeInSeconds"`
 }
