@@ -4,14 +4,17 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"strconv"
+	"time"
 )
 
 const (
 	environmentConfigurationKey = "WORKERCONF"
 
-	DEFAULT_empty                 = ""
-	DEFAULT_workerVersion         = "2.0.0"
-	DEFAULT_sandboxExecutableName = "sandbox"
+	DEFAULT_empty                         = ""
+	DEFAULT_workerVersion                 = "2.0.0"
+	DEFAULT_sandboxExecutableName         = "sandbox"
+	DEFAULT_jrdsPollingFrequencyInSeconds = 10
 )
 
 type Configuration struct {
@@ -25,6 +28,8 @@ type Configuration struct {
 	WorkerVersion          string `json:"worker_version"`
 	WorkerWorkingDirectory string `json:"working_directory_path"`
 	SandboxExecutablePath  string `json:"sandbox_executable_path"`
+
+	JrdsPollingFrequency string `json:"jrds_polling_frequency"`
 }
 
 func LoadConfiguration(path string) error {
@@ -140,4 +145,14 @@ var GetSandboxExecutablePath = func() string {
 var GetWorkerVersion = func() string {
 	config := getEnvironmentConfiguration()
 	return config.WorkerVersion
+}
+
+var GetJrdsPollingFrequencyInSeconds = func() time.Duration {
+	config := getEnvironmentConfiguration()
+	freq, err := strconv.Atoi(config.JrdsPollingFrequency)
+	if err != nil {
+		return time.Duration(DEFAULT_jrdsPollingFrequencyInSeconds) * time.Second
+	}
+
+	return time.Duration(freq) * time.Second
 }

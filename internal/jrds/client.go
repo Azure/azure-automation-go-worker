@@ -130,6 +130,17 @@ func (jrds *JrdsClient) SetLog(eventId string, activityId string, logType string
 	return nil
 }
 
+func (jrds *JrdsClient) UnloadJob(subscriptionId string, sandboxId string, jobId string, isTest bool, startTime string) error {
+	payload := UnloadJob{JobId: &jobId, IsTest: &isTest, StartTime: &startTime, SubscriptionId: &subscriptionId}
+	url := fmt.Sprintf("%v/automationAccounts/%v/Sandboxes/%v/jobs/%v/unload?api-version=%v", jrds.baseUri, jrds.accountId, sandboxId, jobId, jrds.protocolVersion)
+	err := jrds.issuePostRequest(url, payload, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (jrds JrdsClient) getDefaultHeaders() map[string]string {
 	return map[string]string{accept_headerKey: appjson_headerValue,
 		conection_headerKey: keepalive_headerValue,

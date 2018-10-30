@@ -19,7 +19,7 @@ type JobAction struct {
 	JobId           *string          `json:"JobId"`
 }
 
-type MessageMetadatas struct{
+type MessageMetadatas struct {
 	MessageMetadatas []MessageMetadata `json:"MessageMetadatas"`
 }
 
@@ -94,4 +94,11 @@ type Log struct {
 	Arguments  *[]string `json:"args"`
 	EventId    *string   `json:"eventId"`
 	LogType    *string   `json:"logtype"`
+}
+
+type UnloadJob struct {
+	IsTest         *bool   `json:"isTest"`
+	JobId          *string `json:"jobId"`
+	StartTime      *string `json:"startTime"`
+	SubscriptionId *string `json:"subscriptionId"`
 }
