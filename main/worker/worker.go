@@ -1,7 +1,108 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/Azure/azure-automation-go-worker/internal/configuration"
+	"github.com/Azure/azure-automation-go-worker/internal/jrds"
+	"github.com/Azure/azure-automation-go-worker/main/worker/sandbox"
+	"os"
+	"time"
+)
+
+type Worker struct {
+	jrdsPollingFrequency time.Duration
+	jrdsClient           JrdsClient
+	sandboxCollection    map[string]*sandbox.Sandbox
+}
+
+type JrdsClient interface {
+	GetSandboxActions(sandboxAction *jrds.SandboxActions) error
+}
+
+// NewWorker creates a new hybrid worker
+func NewWorker(client JrdsClient) Worker {
+	return Worker{jrdsClient: client,
+		jrdsPollingFrequency: configuration.GetJrdsPollingFrequencyInSeconds(),
+		sandboxCollection:    make(map[string]*sandbox.Sandbox)}
+}
+
+// Start starts the main loop of the hybrid worker which polls JRDS for sandbox actions
+func (worker *Worker) Start() {
+	for {
+		worker.routine()
+		time.Sleep(worker.jrdsPollingFrequency)
+	}
+}
+
+// routine defines the main polling logic and actions to perform when a new sandbox has to be created
+func (worker *Worker) routine() {
+	// get sandbox actions
+	actions := jrds.SandboxActions{}
+	err := worker.jrdsClient.GetSandboxActions(&actions)
+	if err != nil {
+		fmt.Printf("error getting sandbox.exe action")
+		return
+	}
+
+	// start a new sandbox for each actions returned by jrds
+	fmt.Printf("Get sandox action : %v actions \n", len(actions.Value))
+	if len(actions.Value) > 0 {
+		for _, action := range actions.Value {
+			sandboxId := *action.SandboxId
+			if _, tracked := worker.sandboxCollection[sandboxId]; tracked {
+				// sandbox already tracked, skip sandbox creation
+				continue
+			}
+
+			sandbox := sandbox.NewSandbox(sandboxId)
+			worker.sandboxCollection[sandbox.Id] = &sandbox
+			err := createAndStartSandbox(&sandbox)
+			if err != nil {
+				fmt.Printf("error calling create and start sandbox %v", err)
+			}
+		}
+	}
+}
+
+var createAndStartSandbox = func(sandbox *sandbox.Sandbox) error {
+	err := sandbox.CreateBaseDirectory()
+	if err != nil {
+		return err
+	}
+
+	sandbox.Start()
+	go monitorSandbox(sandbox)
+	return nil
+}
+
+var monitorSandbox = func(sandbox *sandbox.Sandbox) {
+	for sandbox.IsAlive() {
+		time.Sleep(time.Millisecond * 300) // TODO: temporary until async output is implemented
+	}
+
+	stdout, err := sandbox.GetOutput()
+	if err != nil {
+		fmt.Println("error getting sandbox sdout")
+	}
+	stderr, err := sandbox.GetErrorOutput()
+	if err != nil {
+		fmt.Println("error getting sandbox stderr")
+	}
+
+	fmt.Printf("%v : stdout [%v]\n", sandbox.Id, stdout)
+	fmt.Printf("%v : stderr [%v]\n", sandbox.Id, stderr)
+	fmt.Printf("Done monitoring sandbox %v \n", sandbox.Id)
+	sandbox.Cleanup()
+}
 
 func main() {
 	fmt.Println("Worker starting")
+
+	// always load configuration before anything else
+	configuration.LoadConfiguration(os.Args[1])
+	httpClient := jrds.NewSecureHttpClient(configuration.GetJrdsCertificatePath(), configuration.GetJrdsKeyPath())
+	jrdsClient := jrds.NewJrdsClient(&httpClient, configuration.GetJrdsBaseUri(), configuration.GetAccountId(), configuration.GetHybridWorkerGroupName())
+
+	worker := NewWorker(&jrdsClient)
+	worker.Start()
 }
