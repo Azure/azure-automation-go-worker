@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"strconv"
-	"time"
 )
 
 const (
@@ -147,12 +146,12 @@ var GetWorkerVersion = func() string {
 	return config.WorkerVersion
 }
 
-var GetJrdsPollingFrequencyInSeconds = func() time.Duration {
+var GetJrdsPollingFrequencyInSeconds = func() int64 {
 	config := getEnvironmentConfiguration()
 	freq, err := strconv.Atoi(config.JrdsPollingFrequency)
 	if err != nil {
-		return time.Duration(DEFAULT_jrdsPollingFrequencyInSeconds) * time.Second
+		return DEFAULT_jrdsPollingFrequencyInSeconds
 	}
 
-	return time.Duration(freq) * time.Second
+	return int64(freq)
 }

@@ -22,7 +22,7 @@ type JrdsClient interface {
 // NewWorker creates a new hybrid worker
 func NewWorker(client JrdsClient) Worker {
 	return Worker{jrdsClient: client,
-		jrdsPollingFrequency: configuration.GetJrdsPollingFrequencyInSeconds(),
+		jrdsPollingFrequency: time.Duration(int64(time.Second) * configuration.GetJrdsPollingFrequencyInSeconds()),
 		sandboxCollection:    make(map[string]*sandbox.Sandbox)}
 }
 
