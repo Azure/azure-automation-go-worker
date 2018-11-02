@@ -42,7 +42,7 @@ func NewInsecureHttpClient(certificate string, key string) HttpClient {
 
 	tlsConfig := &tls.Config{
 		Certificates:       []tls.Certificate{cert},
-		InsecureSkipVerify: true, // TODO: remove for prod
+		InsecureSkipVerify: true,
 		Renegotiation:      tls.RenegotiateFreelyAsClient,
 	}
 
