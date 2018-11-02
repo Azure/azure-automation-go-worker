@@ -2,20 +2,10 @@ package tracer
 
 import (
 	"fmt"
-	"github.com/Azure/azure-automation-go-worker/internal/configuration"
-	"github.com/Azure/azure-automation-go-worker/internal/jrds"
 	"strconv"
 	"testing"
 	"time"
 )
-
-func TestInitializeTracer(t *testing.T) {
-	configuration.LoadConfiguration("C:\\Users\\dalbe\\go\\src\\github.com\\Azure\\azure-automation-go-worker\\misc\\windows-test.json")
-	httpClient := jrds.NewInsecureHttpClient(configuration.GetJrdsCertificatePath(), configuration.GetJrdsKeyPath())
-	jrdsClient := jrds.NewJrdsClient(&httpClient, configuration.GetJrdsBaseUri(), configuration.GetAccountId(), configuration.GetHybridWorkerGroupName())
-	InitializeTracer(&jrdsClient)
-	LogWorkerStarting()
-}
 
 type jrdsMock struct {
 	setLog_f func(eventId int, activityId string, logType int, args ...string) error

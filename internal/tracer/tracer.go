@@ -101,7 +101,7 @@ var NewTrace = func(eventId int, taskName string, message string, keyword string
 }
 
 var traceErrorLocally = func(message string) {
-	errorTrace := NewTrace(9, tasknameTraceError, message, keywordError)
+	errorTrace := NewTrace(0, tasknameTraceError, message, keywordError)
 	traceLocally(errorTrace)
 }
 
