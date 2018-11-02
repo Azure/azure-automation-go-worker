@@ -86,7 +86,7 @@ var traceGenericHybridWorkerEventRoutine = func(trace trace) {
 var NewTrace = func(eventId int, taskName string, message string, keyword string) trace {
 	return trace{
 		component:             configuration.GetComponent(),
-		threadId:              1,
+		threadId:              1, // thread id are not exposed in go but this field is require for cloud traces
 		processId:             os.Getpid(),
 		eventId:               eventId,
 		taskName:              taskName,
