@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/Azure/azure-automation-go-worker/internal/configuration"
 	"github.com/Azure/azure-automation-go-worker/internal/jrds"
+	"github.com/Azure/azure-automation-go-worker/internal/tracer"
 	"github.com/Azure/azure-automation-go-worker/main/worker/sandbox"
 	"os"
 	"time"
@@ -40,13 +41,14 @@ func (worker *Worker) routine() {
 	actions := jrds.SandboxActions{}
 	err := worker.jrdsClient.GetSandboxActions(&actions)
 	if err != nil {
-		fmt.Printf("error getting sandbox.exe action")
+		tracer.LogWorkerErrorGettingSandboxActions(err)
 		return
 	}
 
 	// start a new sandbox for each actions returned by jrds
-	fmt.Printf("Get sandox action : %v actions \n", len(actions.Value))
+	tracer.LogDebugTrace(fmt.Sprintf("Get sandbox action. Found %v action(s).", len(actions.Value)))
 	if len(actions.Value) > 0 {
+		tracer.LogWorkerSandboxActionsFound(actions)
 		for _, action := range actions.Value {
 			sandboxId := *action.SandboxId
 			if _, tracked := worker.sandboxCollection[sandboxId]; tracked {
@@ -58,7 +60,7 @@ func (worker *Worker) routine() {
 			worker.sandboxCollection[sandbox.Id] = &sandbox
 			err := createAndStartSandbox(&sandbox)
 			if err != nil {
-				fmt.Printf("error calling create and start sandbox %v", err)
+				tracer.LogWorkerFailedToCreateSandbox(err)
 			}
 		}
 	}
@@ -96,13 +98,17 @@ var monitorSandbox = func(sandbox *sandbox.Sandbox) {
 }
 
 func main() {
-	fmt.Println("Worker starting")
+	// always load configuration and initialize tracer before anything else
+	err := configuration.LoadConfiguration(os.Args[1])
+	if err != nil {
+		panic(err)
+	}
 
-	// always load configuration before anything else
-	configuration.LoadConfiguration(os.Args[1])
 	httpClient := jrds.NewSecureHttpClient(configuration.GetJrdsCertificatePath(), configuration.GetJrdsKeyPath())
 	jrdsClient := jrds.NewJrdsClient(&httpClient, configuration.GetJrdsBaseUri(), configuration.GetAccountId(), configuration.GetHybridWorkerGroupName())
+	tracer.InitializeTracer(&jrdsClient)
 
+	tracer.LogWorkerStarting()
 	worker := NewWorker(&jrdsClient)
 	worker.Start()
 }
