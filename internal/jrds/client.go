@@ -24,7 +24,7 @@ const (
 	appjson_headerValue   = "application/json"
 	keepalive_headerValue = "keep-alive"
 
-	datetimeFormat = "2018-10-20T01:00:00.0000000"
+	datetimeFormat = "2006-01-02T15:04:05.999999"
 )
 
 type httpClient interface {
@@ -119,7 +119,7 @@ func (jrds *JrdsClient) SetJobStream(jobId string, runbookVersionId string, text
 	return nil
 }
 
-func (jrds *JrdsClient) SetLog(eventId string, activityId string, logType string, args ...string) error {
+func (jrds *JrdsClient) SetLog(eventId int, activityId string, logType int, args ...string) error {
 	log := Log{EventId: &eventId, Arguments: &args, LogType: &logType, ActivityId: &activityId}
 	url := fmt.Sprintf("%s/automationAccounts/%s/logs?api-version=%s", jrds.baseUri, jrds.accountId, jrds.protocolVersion)
 	err := jrds.issuePostRequest(url, log, nil)

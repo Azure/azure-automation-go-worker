@@ -92,8 +92,8 @@ type Stream struct {
 type Log struct {
 	ActivityId *string   `json:"activityId"`
 	Arguments  *[]string `json:"args"`
-	EventId    *string   `json:"eventId"`
-	LogType    *string   `json:"logtype"`
+	EventId    *int      `json:"eventId"`
+	LogType    *int      `json:"logtype"`
 }
 
 type UnloadJob struct {

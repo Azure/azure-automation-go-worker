@@ -9,7 +9,7 @@
   "worker_version" : "",
   "working_directory_path" : "",
 
-  "debug_traces" : "",
+  "debug_traces" : false,
   "bypass_certificate_verification" : "",
   "enforce_runbook_signature_validation" : "",
   "gpg_public_keyring_path" : "",

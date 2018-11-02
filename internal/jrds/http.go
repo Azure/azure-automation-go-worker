@@ -18,12 +18,23 @@ type HttpClient struct {
 	httpClient *http.Client
 }
 
-func NewInSecureHttpClient() HttpClient {
-	httpClient := &http.Client{}
+func NewSecureHttpClient(certificate string, key string) HttpClient {
+	cert, err := tls.LoadX509KeyPair(certificate, key)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tlsConfig := &tls.Config{
+		Certificates:  []tls.Certificate{cert},
+		Renegotiation: tls.RenegotiateFreelyAsClient,
+	}
+
+	transport := &http.Transport{TLSClientConfig: tlsConfig}
+	httpClient := &http.Client{Transport: transport}
 	return HttpClient{httpClient}
 }
 
-func NewSecureHttpClient(certificate string, key string) HttpClient {
+func NewInsecureHttpClient(certificate string, key string) HttpClient {
 	cert, err := tls.LoadX509KeyPair(certificate, key)
 	if err != nil {
 		log.Fatal(err)

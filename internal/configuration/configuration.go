@@ -14,6 +14,8 @@ const (
 	DEFAULT_workerVersion                 = "2.0.0"
 	DEFAULT_sandboxExecutableName         = "sandbox"
 	DEFAULT_jrdsPollingFrequencyInSeconds = 10
+	DEFAULT_component                     = "worker"
+	DEFAULT_debugTraces                   = false
 )
 
 type Configuration struct {
@@ -29,6 +31,10 @@ type Configuration struct {
 	SandboxExecutablePath  string `json:"sandbox_executable_path"`
 
 	JrdsPollingFrequency string `json:"jrds_polling_frequency"`
+	DebugTraces          bool   `json:"debug_traces"`
+
+	// runtime configuration
+	Component string `json:"component"`
 }
 
 func LoadConfiguration(path string) error {
@@ -73,14 +79,13 @@ var clearConfiguration = func() {
 
 var getEnvironmentConfiguration = func() Configuration {
 	value, exists := os.LookupEnv(environmentConfigurationKey)
-	if exists == false {
-		panic("unable to get configuration from environment")
-	}
 
 	configuration := Configuration{}
-	err := deserializeConfiguration([]byte(value), &configuration)
-	if err != nil {
-		panic("unable to deserialize configuration from environment")
+	if exists {
+		err := deserializeConfiguration([]byte(value), &configuration)
+		if err != nil {
+			panic("unable to deserialize configuration from environment")
+		}
 	}
 	return configuration
 }
@@ -103,7 +108,9 @@ var getDefaultConfiguration = func() Configuration {
 		HybridWorkerGroupName:  DEFAULT_empty,
 		WorkerVersion:          DEFAULT_workerVersion,
 		WorkerWorkingDirectory: DEFAULT_empty,
-		SandboxExecutablePath:  DEFAULT_sandboxExecutableName}
+		SandboxExecutablePath:  DEFAULT_sandboxExecutableName,
+		Component:              DEFAULT_component,
+		DebugTraces:            DEFAULT_debugTraces}
 }
 
 var GetJrdsCertificatePath = func() string {
@@ -154,4 +161,14 @@ var GetJrdsPollingFrequencyInSeconds = func() int64 {
 	}
 
 	return int64(freq)
+}
+
+var GetComponent = func() string {
+	config := getEnvironmentConfiguration()
+	return config.Component
+}
+
+var GetDebugTraces = func() bool {
+	config := getEnvironmentConfiguration()
+	return config.DebugTraces
 }
