@@ -67,12 +67,22 @@ func InitializeTracer(client jrdsTracer) {
 	jrdsClient = client
 }
 
-var traceGenericHybridWorkerEvent = func(eventId int, taskName string, message string, keyword string) {
+var traceGenericHybridWorkerDebugEvent = func(eventId int, taskName string, message string, keyword string) {
 	trace := NewTrace(eventId, taskName, message, keyword)
-	go traceGenericHybridWorkerEventRoutine(trace)
+	go traceGenericHybridWorkerEventRoutine(trace, true)
 }
 
-var traceGenericHybridWorkerEventRoutine = func(trace trace) {
+var traceGenericHybridWorkerEvent = func(eventId int, taskName string, message string, keyword string) {
+	trace := NewTrace(eventId, taskName, message, keyword)
+	go traceGenericHybridWorkerEventRoutine(trace, false)
+}
+
+var traceGenericHybridWorkerEventRoutine = func(trace trace, debug bool) {
+	// do not log debug traces based on configuration
+	if !configuration.GetDebugTraces() && debug {
+		return
+	}
+
 	// local stdout
 	traceLocally(trace)
 
@@ -176,7 +186,7 @@ func LogWorkerTraceError(message string) {
 }
 
 func LogDebugTrace(message string) {
-	traceGenericHybridWorkerEvent(20001, getTraceName(), message, keywordDebug)
+	traceGenericHybridWorkerDebugEvent(20001, getTraceName(), message, keywordDebug)
 }
 
 func LogWorkerStarting() {
