@@ -17,8 +17,10 @@ import (
 )
 
 const (
-	logPrefix = "Log"
-	empty     = ""
+	empty = ""
+
+	logPrefix        = "Log"
+	debugTracePrefix = "[DebugTrace]"
 
 	traceDatetimeFormat = "2006-01-02T15:04:05.99"
 
@@ -32,7 +34,9 @@ const (
 	keywordInformational = "Informational"
 	keywordJob           = "Job"
 
-	tasknameTraceError = "TraceError"
+	tasknameTraceError     = "TraceError"
+	trasknameSandboxStdout = "SandboxStdout"
+	trasknameSandboxStderr = "SandboxStderr"
 )
 
 var (
@@ -74,15 +78,15 @@ func InitializeTracer(client jrdsTracer) {
 
 var traceGenericHybridWorkerDebugEvent = func(eventId int, taskName string, message string, keyword string) {
 	trace := NewTrace(eventId, taskName, message, keyword)
-	go traceGenericHybridWorkerEventRoutine(trace, true)
+	go traceGenericHybridWorkerEventRoutine(trace, true, false)
 }
 
 var traceGenericHybridWorkerEvent = func(eventId int, taskName string, message string, keyword string) {
 	trace := NewTrace(eventId, taskName, message, keyword)
-	go traceGenericHybridWorkerEventRoutine(trace, false)
+	go traceGenericHybridWorkerEventRoutine(trace, false, false)
 }
 
-var traceGenericHybridWorkerEventRoutine = func(trace trace, debug bool) {
+var traceGenericHybridWorkerEventRoutine = func(trace trace, debug bool, localonly bool) {
 	// do not log debug traces based on configuration
 	if !configuration.GetDebugTraces() && debug {
 		return
@@ -90,6 +94,10 @@ var traceGenericHybridWorkerEventRoutine = func(trace trace, debug bool) {
 
 	// local stdout
 	traceLocally(trace)
+
+	if localonly {
+		return
+	}
 
 	// cloud stdout
 	err := formatAndIssueTrace(trace)
@@ -121,9 +129,19 @@ var traceErrorLocally = func(message string) {
 }
 
 var traceLocally = func(trace trace) {
-	const format = "%s (%v)[%s] : [%s] %v \n"
-	var now = time.Now().Format(traceDatetimeFormat)
-	fmt.Printf(format, now, trace.processId, trace.component, trace.taskName, trace.message)
+	traceOutput := ""
+
+	if configuration.GetComponent() == configuration.Component_worker &&
+		trace.component == configuration.Component_sandbox {
+		const format = "%v \n"
+		traceOutput = fmt.Sprintf(format, trace.message)
+	} else {
+		const format = "%s (%v)[%s] : [%s] %v \n"
+		var now = time.Now().Format(traceDatetimeFormat)
+		traceOutput = fmt.Sprintf(format, now, trace.processId, trace.component, trace.taskName, trace.message)
+	}
+
+	fmt.Print(traceOutput)
 }
 
 var formatAndIssueTrace = func(trace trace) error {
@@ -184,6 +202,18 @@ var getTraceName = func() string {
 
 	replacer := strings.NewReplacer(logPrefix, empty, fmt.Sprintf("%s.", tracerPackageName), empty)
 	return replacer.Replace(frame.Function)
+}
+
+func LogSandboxStdout(message string) {
+	trace := NewTrace(0, trasknameSandboxStdout, message, keywordInformational)
+	trace.component = configuration.Component_sandbox
+	go traceGenericHybridWorkerEventRoutine(trace, strings.Contains(message, debugTracePrefix), true)
+}
+
+func LogSandboxStderr(message string) {
+	trace := NewTrace(0, trasknameSandboxStderr, message, keywordInformational)
+	trace.component = configuration.Component_sandbox
+	go traceGenericHybridWorkerEventRoutine(trace, strings.Contains(message, debugTracePrefix), true)
 }
 
 func LogWorkerTraceError(message string) {

@@ -55,6 +55,7 @@ var routine = func(sandbox *Sandbox) {
 		tracer.LogErrorTrace(err.Error())
 	}
 
+	tracer.LogDebugTrace(fmt.Sprintf("Get job action. Found %v new action(s).", len(jobActions.Value)))
 	for _, action := range jobActions.Value {
 		tracer.LogSandboxGetJobActions(&jobActions)
 
@@ -62,10 +63,6 @@ var routine = func(sandbox *Sandbox) {
 		err := sandbox.jrdsClient.GetJobData(*action.JobId, &jobData)
 		if err != nil {
 			fmt.Printf("error getting jobData %v", err)
-		}
-
-		if jobData.PendingAction != nil {
-			fmt.Printf("pending action %v\n", *jobData.PendingAction)
 		}
 
 		if (jobData.PendingAction != nil && *jobData.PendingAction == 1) ||
@@ -90,7 +87,6 @@ var routine = func(sandbox *Sandbox) {
 		}
 	}
 
-	// clean
 	stopTrackingCompletedJobs(sandbox)
 }
 
