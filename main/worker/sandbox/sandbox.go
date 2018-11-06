@@ -14,20 +14,21 @@ type Sandbox struct {
 	workingDirectory           string
 	workingDirectoryPermission os.FileMode
 
-	command *executil.AsyncCommand
-	isAlive bool
+	command   *executil.AsyncCommand
+	isRunning *bool
 
 	commandHandler executil.AsyncCommandHandler
 }
 
 var NewSandbox = func(sandboxId string) Sandbox {
 	const permission = 644
+	isRunning := false
 	return Sandbox{Id: sandboxId,
 		command:                    nil,
 		workingDirectory:           filepath.Join(configuration.GetWorkingDirectory(), sandboxId),
 		workingDirectoryPermission: permission,
 		commandHandler:             executil.GetAsyncCommandHandler(),
-		isAlive:                    false,
+		isRunning:                  &isRunning,
 	}
 }
 
@@ -55,13 +56,12 @@ func (s *Sandbox) Cleanup() error {
 
 func (s *Sandbox) Start() {
 	s.command = getSandboxCommand(s.Id, s.workingDirectory) // TODO: start sandbox command; this is a blocking call will need to become async
-	s.isAlive = true
+	s.isRunning = &s.command.IsRunning
 	s.commandHandler.ExecuteAsync(s.command)
-	s.isAlive = false
 }
 
 func (s *Sandbox) IsAlive() bool {
-	return s.isAlive
+	return *s.isRunning
 }
 
 var getSandboxCommand = func(sandboxId string, workingDirectory string) *executil.AsyncCommand {
