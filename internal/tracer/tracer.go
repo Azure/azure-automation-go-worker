@@ -25,10 +25,12 @@ const (
 	cloudDebugLogType       = 0
 	cloudHybridTraceEventId = 16000
 
-	keywordError   = "Error"
-	keywordDebug   = "Debug"
-	keywordStartup = "Startup"
-	keywordRoutine = "Routine"
+	keywordError         = "Error"
+	keywordDebug         = "Debug"
+	keywordStartup       = "Startup"
+	keywordRoutine       = "Routine"
+	keywordInformational = "Informational"
+	keywordJob           = "Job"
 
 	tasknameTraceError = "TraceError"
 )
@@ -192,8 +194,13 @@ func LogDebugTrace(message string) {
 	traceGenericHybridWorkerDebugEvent(20001, getTraceName(), message, keywordDebug)
 }
 
+func LogErrorTrace(error string) {
+	message := fmt.Sprintf("Error : %v", error)
+	traceGenericHybridWorkerDebugEvent(20001, getTraceName(), message, keywordDebug)
+}
+
 func LogWorkerStarting() {
-	message := "Worker Starting"
+	message := "Worker starting."
 	traceGenericHybridWorkerEvent(20020, getTraceName(), message, keywordStartup)
 }
 
@@ -210,4 +217,24 @@ func LogWorkerErrorGettingSandboxActions(err error) {
 func LogWorkerFailedToCreateSandbox(err error) {
 	message := fmt.Sprintf("Error creating sandbox. [error=%v]", err.Error())
 	traceGenericHybridWorkerEvent(20102, getTraceName(), message, keywordRoutine)
+}
+
+func LogSandboxStarting(id string) {
+	message := fmt.Sprintf("Sandbox starting [sandboxId=%v]", id)
+	traceGenericHybridWorkerEvent(25000, getTraceName(), message, keywordStartup)
+}
+
+func LogSandboxGetJobActions(actions *jrds.JobActions) {
+	message := fmt.Sprintf("Get job actions. Found %v new action(s).", len(actions.Value))
+	traceGenericHybridWorkerEvent(25001, getTraceName(), message, keywordRoutine)
+}
+
+func LogSandboxJobLoaded(sandboxId, jobId string) {
+	message := fmt.Sprintf("Job loaded. [sandboxId=%v][jobId=%v]", sandboxId, jobId)
+	traceGenericHybridWorkerEvent(25010, getTraceName(), message, keywordJob)
+}
+
+func LogSandboxJobUnloaded(sandboxId, jobId string) {
+	message := fmt.Sprintf("Job unloaded. [sandboxId=%v][jobId=%v]", sandboxId, jobId)
+	traceGenericHybridWorkerEvent(25013, getTraceName(), message, keywordJob)
 }

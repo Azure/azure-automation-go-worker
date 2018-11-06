@@ -49,11 +49,25 @@ func (jrds *JrdsClient) GetSandboxActions(sandboxAction *SandboxActions) error {
 	return nil
 }
 
-func (jrds *JrdsClient) GetJobActions(sandboxId string, jobData *JobActions) error {
+func (jrds *JrdsClient) GetJobActions(sandboxId string, jobActions *JobActions) error {
 	url := fmt.Sprintf("%s/automationAccounts/%s/Sandboxes/%s/jobs/getJobActions?api-version=%s", jrds.baseUri, jrds.accountId, sandboxId, jrds.protocolVersion)
-	err := jrds.issueGetRequest(url, jobData)
+	err := jrds.issueGetRequest(url, jobActions)
 	if err != nil {
 		return err
+	}
+
+	actions := (*jobActions).Value
+	if len(actions) > 0 {
+		var arr []MessageMetadata
+		for _, jobaction := range actions {
+			arr = append(arr, *jobaction.MessageMetadata)
+		}
+
+		metadatas := MessageMetadatas{arr}
+		err = jrds.AcknowledgeJobAction(sandboxId, metadatas)
+		if err != nil {
+			fmt.Printf("error getting messageMetadata %v", err)
+		}
 	}
 
 	return nil
@@ -133,8 +147,9 @@ func (jrds *JrdsClient) SetLog(eventId int, activityId string, logType int, args
 	return nil
 }
 
-func (jrds *JrdsClient) UnloadJob(subscriptionId string, sandboxId string, jobId string, isTest bool, startTime string, executionTimeInSeconds int) error {
-	payload := UnloadJob{JobId: &jobId, IsTest: &isTest, StartTime: &startTime, SubscriptionId: &subscriptionId, ExecutionTimeInSeconds: &executionTimeInSeconds}
+func (jrds *JrdsClient) UnloadJob(subscriptionId string, sandboxId string, jobId string, isTest bool, startTime time.Time, executionTimeInSeconds int) error {
+	jobStartTime := startTime.Format(datetimeFormat)
+	payload := UnloadJob{JobId: &jobId, IsTest: &isTest, StartTime: &jobStartTime, SubscriptionId: &subscriptionId, ExecutionTimeInSeconds: &executionTimeInSeconds}
 	url := fmt.Sprintf("%s/automationAccounts/%s/Sandboxes/%s/jobs/%s/unload?api-version=%s", jrds.baseUri, jrds.accountId, sandboxId, jobId, jrds.protocolVersion)
 	err := jrds.issuePostRequest(url, payload, nil)
 	if err != nil {
@@ -166,15 +181,15 @@ func (jrds *JrdsClient) issuePostRequest(url string, payload interface{}, out in
 	code, _, err := jrds.client.Post(url, headers, body)
 
 	if err != nil {
-		return NewRequestError(fmt.Sprintf("request error : %v \n", err))
+		return NewRequestError(fmt.Sprintf("request error %v : %v\n", url, code))
 	}
 
 	if code == 401 {
-		return NewRequestAuthorizationError(fmt.Sprintf("authorization error : %v\n", code))
+		return NewRequestAuthorizationError(fmt.Sprintf("authorization error %v : %v\n", url, code))
 	}
 
 	if code != 200 {
-		return NewRequestInvalidStatusError(fmt.Sprintf("invalid return code : %v\n", code))
+		return NewRequestInvalidStatusError(fmt.Sprintf("invalid return code for %v : %v\n", url, code))
 	}
 
 	if out != nil {
@@ -190,15 +205,15 @@ func (jrds *JrdsClient) issueGetRequest(url string, out interface{}) error {
 	code, body, err := jrds.client.Get(url, jrds.getDefaultHeaders())
 
 	if err != nil {
-		return NewRequestError(fmt.Sprintf("request error : %v \n", err))
+		return NewRequestError(fmt.Sprintf("request error %v : %v\n", url, code))
 	}
 
 	if code == 401 {
-		return NewRequestAuthorizationError(fmt.Sprintf("authorization error : %v\n", code))
+		return NewRequestAuthorizationError(fmt.Sprintf("authorization error %v : %v\n", url, code))
 	}
 
 	if code != 200 {
-		return NewRequestInvalidStatusError(fmt.Sprintf("invalid return code : %v\n", code))
+		return NewRequestInvalidStatusError(fmt.Sprintf("invalid return code for %v : %v\n", url, code))
 	}
 
 	if out != nil {

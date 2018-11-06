@@ -28,6 +28,10 @@ type MessageMetadatas struct {
 
 type JobData struct {
 	RunbookVersionId *string `json:"runbookVersionId"`
+	JobId            *string `json:"jobId"`
+	SubscriptionId   *string `json:"subscriptionId"`
+	PendingAction    *int    `json:"pendingAction"`
+	JobStatus        *int    `json:"jobStatus"`
 }
 
 type JobUpdatableData struct {
@@ -57,13 +61,13 @@ type JobUpdatableData struct {
 }
 
 type RunbookData struct {
-	Name                  *string `json:"name"`
-	AccountId             *string `json:"accountId"`
-	RunbookId             *string `json:"runbookId"`
-	Definition            *string `json:"definition"`
-	RunbookDefinitionKind *int    `json:"runbookDefinitionKind"`
-	RunbookVersionId      *int    `json:"runbookVersionId"`
-	Parameters            *bool   `json:"parameters"`
+	Name                  *string   `json:"name"`
+	AccountId             *string   `json:"accountId"`
+	RunbookId             *string   `json:"runbookId"`
+	Definition            *string   `json:"definition"`
+	RunbookDefinitionKind *int      `json:"runbookDefinitionKind"`
+	RunbookVersionId      *string   `json:"runbookVersionId"`
+	Parameters            *[]string `json:"parameters"`
 }
 
 type MessageMetadata struct {

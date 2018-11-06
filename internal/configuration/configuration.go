@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
-	"strconv"
 )
 
 const (
@@ -17,8 +16,11 @@ const (
 	DEFAULT_workerVersion                 = "2.0.0"
 	DEFAULT_sandboxExecutableName         = "sandbox"
 	DEFAULT_jrdsPollingFrequencyInSeconds = 10
-	DEFAULT_component                     = "worker"
+	DEFAULT_component                     = Component_worker
 	DEFAULT_debugTraces                   = false
+
+	Component_sandbox = "sandbox"
+	Component_worker  = "worker"
 )
 
 type Configuration struct {
@@ -33,8 +35,8 @@ type Configuration struct {
 	WorkerWorkingDirectory string `json:"working_directory_path"`
 	SandboxExecutablePath  string `json:"sandbox_executable_path"`
 
-	JrdsPollingFrequency string `json:"jrds_polling_frequency"`
-	DebugTraces          bool   `json:"debug_traces"`
+	JrdsPollingFrequency int  `json:"jrds_polling_frequency"`
+	DebugTraces          bool `json:"debug_traces"`
 
 	// runtime configuration
 	Component string `json:"component"`
@@ -51,8 +53,16 @@ func LoadConfiguration(path string) error {
 		return err
 	}
 
-	setConfiguration(configuration)
+	setConfiguration(&configuration)
 	return nil
+}
+
+func SetConfiguration(configuration *Configuration) {
+	setConfiguration(configuration)
+}
+
+func GetConfiguration() Configuration {
+	return getEnvironmentConfiguration()
 }
 
 var readDiskConfiguration = func(path string) ([]byte, error) {
@@ -64,7 +74,7 @@ var readDiskConfiguration = func(path string) ([]byte, error) {
 	return content, nil
 }
 
-var setConfiguration = func(config Configuration) {
+var setConfiguration = func(config *Configuration) {
 	configuration, err := serializeConfiguration(config)
 	if err != nil {
 		panic("unable to serialize configuration from environment")
@@ -93,7 +103,7 @@ var getEnvironmentConfiguration = func() Configuration {
 	return configuration
 }
 
-var serializeConfiguration = func(configuration Configuration) ([]byte, error) {
+var serializeConfiguration = func(configuration *Configuration) ([]byte, error) {
 	return json.Marshal(configuration)
 }
 
@@ -158,12 +168,7 @@ var GetWorkerVersion = func() string {
 
 var GetJrdsPollingFrequencyInSeconds = func() int64 {
 	config := getEnvironmentConfiguration()
-	freq, err := strconv.Atoi(config.JrdsPollingFrequency)
-	if err != nil {
-		return DEFAULT_jrdsPollingFrequencyInSeconds
-	}
-
-	return int64(freq)
+	return int64(config.JrdsPollingFrequency)
 }
 
 var GetComponent = func() string {

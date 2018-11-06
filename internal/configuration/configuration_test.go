@@ -62,3 +62,22 @@ func TestLoadConfiguration_OverrideDefaultValues(t *testing.T) {
 		t.Fatal("unexpected configuration value")
 	}
 }
+
+func TestSetConfiguration(t *testing.T) {
+	clearConfiguration()
+	config := GetConfiguration()
+	config.Component = Component_worker
+	SetConfiguration(&config)
+
+	updatedConfig := GetConfiguration()
+	if updatedConfig.Component != Component_worker {
+		t.Fatal("unexpected configuration value")
+	}
+
+	updatedConfig.Component = Component_sandbox
+	SetConfiguration(&updatedConfig)
+	updatedConfig = GetConfiguration()
+	if updatedConfig.Component != Component_sandbox {
+		t.Fatal("unexpected configuration value")
+	}
+}
