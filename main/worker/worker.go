@@ -75,17 +75,20 @@ var createAndStartSandbox = func(sandbox *sandbox.Sandbox) error {
 		return err
 	}
 
-	sandbox.Start()
+	err = sandbox.Start()
+	if err != nil {
+		return err
+	}
+
 	go monitorSandbox(sandbox)
 	return nil
 }
 
 var monitorSandbox = func(sandbox *sandbox.Sandbox) {
 	for sandbox.IsAlive() {
-		time.Sleep(time.Millisecond * 300) // TODO: temporary until async output is implemented
+		time.Sleep(time.Millisecond * 100) // TODO: temporary until async output is implemented
 	}
 
-	fmt.Printf("Done monitoring sandbox %v \n", sandbox.Id)
 	sandbox.Cleanup()
 }
 

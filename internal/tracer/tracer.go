@@ -249,6 +249,11 @@ func LogWorkerFailedToCreateSandbox(err error) {
 	traceGenericHybridWorkerEvent(20102, getTraceName(), message, keywordRoutine)
 }
 
+func LogWorkerSandboxProcessExited(sandboxId string, pid, exitCode int) {
+	message := fmt.Sprintf("Sandbox process exited. [sandboxId=%v][pId=%v][exitCode=%v]", sandboxId, pid, exitCode)
+	traceGenericHybridWorkerEvent(20102, getTraceName(), message, keywordRoutine)
+}
+
 func LogSandboxStarting(id string) {
 	message := fmt.Sprintf("Sandbox starting [sandboxId=%v]", id)
 	traceGenericHybridWorkerEvent(25000, getTraceName(), message, keywordStartup)

@@ -16,16 +16,18 @@ type Sandbox struct {
 	id      string
 	isAlive bool
 
-	jrdsClient jrdsClient
+	jrdsClient           jrdsClient
+	jrdsPollingFrequency time.Duration
 
 	jobs map[string]*Job
 }
 
 func NewSandbox(sandboxId string, jrdsClient jrdsClient) Sandbox {
 	return Sandbox{id: sandboxId,
-		isAlive:    true,
-		jrdsClient: jrdsClient,
-		jobs:       make(map[string]*Job, 1)}
+		isAlive:              true,
+		jrdsClient:           jrdsClient,
+		jrdsPollingFrequency: time.Duration(int64(time.Second) * configuration.GetJrdsPollingFrequencyInSeconds()),
+		jobs:                 make(map[string]*Job, 1)}
 }
 
 type jrdsClient interface {
@@ -43,7 +45,7 @@ type jrdsClient interface {
 func (sandbox *Sandbox) Start() {
 	for sandbox.isAlive {
 		routine(sandbox)
-		time.Sleep(1 * time.Second)
+		time.Sleep(sandbox.jrdsPollingFrequency)
 	}
 }
 
@@ -109,11 +111,6 @@ func main() {
 		panic("missing sandbox id parameter")
 	}
 	sandboxId := os.Args[1]
-
-	// set component to sandbox
-	currentConfig := configuration.GetConfiguration()
-	currentConfig.Component = configuration.Component_sandbox
-	configuration.SetConfiguration(&currentConfig)
 
 	httpClient := jrds.NewSecureHttpClient(configuration.GetJrdsCertificatePath(), configuration.GetJrdsKeyPath())
 	jrdsClient := jrds.NewJrdsClient(&httpClient, configuration.GetJrdsBaseUri(), configuration.GetAccountId(), configuration.GetHybridWorkerGroupName())

@@ -20,17 +20,23 @@ type AsyncCommand struct {
 
 	cmd *exec.Cmd
 
-	stdout_f   func(str string)
-	stderr_f   func(str string)
-	stdoutPipe io.Reader
-	stderrPipe io.Reader
+	workingDirectory string
+	environment      []string
+	stdout_f         func(str string)
+	stderr_f         func(str string)
+	stdoutPipe       io.Reader
+	stderrPipe       io.Reader
 }
 
-func NewAsyncCommand(stdout func(str string), stderr func(str string), name string, arguments ...string) AsyncCommand {
-	return AsyncCommand{Name: name,
-		Arguments:    arguments,
-		stdout_f:     stdout,
-		stderr_f:     stderr,
-		IsSuccessful: false,
-		IsRunning:    false}
+func NewAsyncCommand(stdout func(str string), stderr func(str string), workingDirectory string, environment []string, name string, arguments ...string) AsyncCommand {
+	command := AsyncCommand{Name: name,
+		Arguments:        arguments,
+		stdout_f:         stdout,
+		stderr_f:         stderr,
+		workingDirectory: workingDirectory,
+		environment:      environment,
+		IsSuccessful:     false,
+		IsRunning:        false}
+
+	return command
 }

@@ -17,8 +17,8 @@ type AsyncHandler interface {
 type AsyncCommandHandler struct {
 }
 
-func (h AsyncCommandHandler) ExecuteAsync(cmd *AsyncCommand) {
-	executeAsyncCommand(cmd)
+func (h AsyncCommandHandler) ExecuteAsync(cmd *AsyncCommand) error {
+	return executeAsyncCommand(cmd)
 }
 
 func GetAsyncCommandHandler() AsyncCommandHandler {
@@ -27,9 +27,12 @@ func GetAsyncCommandHandler() AsyncCommandHandler {
 
 func executeAsyncCommand(command *AsyncCommand) error {
 	cmd := exec.Command(command.Name, command.Arguments...)
+	cmd.Env = command.environment
+	cmd.Dir = command.workingDirectory
+
+	command.stdoutPipe, _ = cmd.StdoutPipe()
+	command.stderrPipe, _ = cmd.StderrPipe()
 	command.cmd = cmd
-	command.stdoutPipe, _ = command.cmd.StdoutPipe()
-	command.stderrPipe, _ = command.cmd.StderrPipe()
 
 	err := command.cmd.Start()
 	if err != nil {

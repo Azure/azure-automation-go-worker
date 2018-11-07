@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	environmentConfigurationKey = "WORKERCONF"
+	EnvironmentConfigurationKey = "WORKERCONF"
 
 	DEFAULT_empty                         = ""
 	DEFAULT_workerVersion                 = "2.0.0"
@@ -48,7 +48,7 @@ func LoadConfiguration(path string) error {
 	if err != nil {
 		return err
 	}
-	err = deserializeConfiguration(content, &configuration)
+	err = DeserializeConfiguration(content, &configuration)
 	if err != nil {
 		return err
 	}
@@ -75,27 +75,27 @@ var readDiskConfiguration = func(path string) ([]byte, error) {
 }
 
 var setConfiguration = func(config *Configuration) {
-	configuration, err := serializeConfiguration(config)
+	configuration, err := SerializeConfiguration(config)
 	if err != nil {
 		panic("unable to serialize configuration from environment")
 	}
 
-	err = os.Setenv(environmentConfigurationKey, string(configuration))
+	err = os.Setenv(EnvironmentConfigurationKey, string(configuration))
 	if err != nil {
 		panic("unable to set configuration to environment")
 	}
 }
 
 var clearConfiguration = func() {
-	os.Unsetenv(environmentConfigurationKey)
+	os.Unsetenv(EnvironmentConfigurationKey)
 }
 
 var getEnvironmentConfiguration = func() Configuration {
-	value, exists := os.LookupEnv(environmentConfigurationKey)
+	value, exists := os.LookupEnv(EnvironmentConfigurationKey)
 
 	configuration := Configuration{}
 	if exists {
-		err := deserializeConfiguration([]byte(value), &configuration)
+		err := DeserializeConfiguration([]byte(value), &configuration)
 		if err != nil {
 			panic("unable to deserialize configuration from environment")
 		}
@@ -103,11 +103,11 @@ var getEnvironmentConfiguration = func() Configuration {
 	return configuration
 }
 
-var serializeConfiguration = func(configuration *Configuration) ([]byte, error) {
+var SerializeConfiguration = func(configuration *Configuration) ([]byte, error) {
 	return json.Marshal(configuration)
 }
 
-var deserializeConfiguration = func(data []byte, configuration *Configuration) error {
+var DeserializeConfiguration = func(data []byte, configuration *Configuration) error {
 	return json.Unmarshal(data, &configuration)
 }
 

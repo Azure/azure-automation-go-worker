@@ -5,8 +5,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/Azure/azure-automation-go-worker/internal/configuration"
 	"github.com/Azure/azure-automation-go-worker/internal/jrds"
 	"github.com/Azure/azure-automation-go-worker/internal/tracer"
+	"github.com/Azure/azure-automation-go-worker/main/sandbox/runtime"
+	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -19,13 +23,7 @@ const (
 )
 
 type Job struct {
-	Id               string
-	jobData          jrds.JobData
-	jobUpdatableData jrds.JobUpdatableData
-	runbookData      jrds.RunbookData
-
-	sandboxId  string
-	jrdsClient jrdsClient
+	Id string
 
 	// runtime
 	StartTime time.Time
@@ -34,22 +32,34 @@ type Job struct {
 	// channels
 	PendingActions chan int
 	Exceptions     chan string
+
+	jobData          jrds.JobData
+	jobUpdatableData jrds.JobUpdatableData
+	runbookData      jrds.RunbookData
+
+	sandboxId        string
+	workingDirectory string
+	jrdsClient       jrdsClient
 }
 
 func NewJob(sandboxId string, jobData jrds.JobData, jrdsClient jrdsClient) Job {
+	workingDirectory := filepath.Join(configuration.GetWorkingDirectory(), *jobData.JobId)
+	err := os.MkdirAll(workingDirectory, 0644)
+	panicOnError("Unable to create job working directory", err)
+
 	return Job{
-		Id:             *jobData.JobId,
-		jobData:        jobData,
-		sandboxId:      sandboxId,
-		jrdsClient:     jrdsClient,
-		StartTime:      time.Now(),
-		Completed:      false,
-		PendingActions: make(chan int),
-		Exceptions:     make(chan string)}
+		Id:               *jobData.JobId,
+		jobData:          jobData,
+		sandboxId:        sandboxId,
+		workingDirectory: workingDirectory,
+		jrdsClient:       jrdsClient,
+		StartTime:        time.Now(),
+		Completed:        false,
+		PendingActions:   make(chan int),
+		Exceptions:       make(chan string)}
 }
 
 func (job *Job) Run() {
-
 	err := loadJob(job)
 	panicOnError(fmt.Sprintf("error loading job %v", err), err)
 
@@ -58,11 +68,6 @@ func (job *Job) Run() {
 
 	err = executeRunbook(job)
 	panicOnError(fmt.Sprintf("error executing runbook %v", err), err)
-
-	err = unloadJob(job)
-	panicOnError(fmt.Sprintf("error unloading job %v", err), err)
-
-	job.Completed = true
 }
 
 var loadJob = func(job *Job) error {
@@ -91,6 +96,37 @@ var loadJob = func(job *Job) error {
 }
 
 var initializeRuntime = func(job *Job) error {
+	// create runbook
+	runbook, err := runtime.NewRunbook(
+		*job.runbookData.Name,
+		*job.runbookData.RunbookVersionId,
+		runtime.DefinitionKind(*job.runbookData.RunbookDefinitionKind),
+		*job.runbookData.Definition)
+	if err != nil {
+		return err
+	}
+
+	// create language; failed the job if the language isn't supported by the worker
+	language, err := runtime.GetLanguage(runbook.Kind)
+	if err != nil {
+		return err
+	}
+
+	// create runtime
+	runtime := runtime.NewRuntime(language, runbook, job.jobData, job.workingDirectory)
+	err = runtime.Initialize()
+	if err != nil {
+		return err
+	}
+
+	// test if is the runtime supported by the os
+	supp := runtime.IsSupported()
+	if !supp {
+		tracer.LogErrorTrace("Runbook definition kind not supported")
+	}
+
+	runtime.StartRunbook()
+
 	return nil // TODO
 }
 
@@ -115,6 +151,10 @@ var executeRunbook = func(job *Job) error {
 	err = job.jrdsClient.SetJobStatus(job.sandboxId, job.Id, enum_statusCompleted, true, nil)
 	panicOnError(fmt.Sprintf("error setting job status %v", err), err)
 
+	err = unloadJob(job)
+	panicOnError(fmt.Sprintf("error unloading job %v", err), err)
+
+	job.Completed = true
 	return nil
 }
 
