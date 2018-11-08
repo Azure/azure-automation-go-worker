@@ -38,7 +38,7 @@ var NewSandbox = func(sandboxId string) Sandbox {
 }
 
 func (s *Sandbox) CreateBaseDirectory() error {
-	const permission = 0640
+	const permission = 0750
 	err := os.MkdirAll(s.workingDirectory, permission) // TODO: change sb permission
 	if err != nil {
 		return err

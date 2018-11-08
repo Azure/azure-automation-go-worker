@@ -44,7 +44,7 @@ type Job struct {
 
 func NewJob(sandboxId string, jobData jrds.JobData, jrdsClient jrdsClient) Job {
 	workingDirectory := filepath.Join(configuration.GetWorkingDirectory(), *jobData.JobId)
-	err := os.MkdirAll(workingDirectory, 0644)
+	err := os.MkdirAll(workingDirectory, 0750)
 	panicOnError("Unable to create job working directory", err)
 
 	return Job{

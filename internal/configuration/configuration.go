@@ -123,7 +123,8 @@ var getDefaultConfiguration = func() Configuration {
 		WorkerWorkingDirectory: DEFAULT_empty,
 		SandboxExecutablePath:  DEFAULT_sandboxExecutableName,
 		Component:              DEFAULT_component,
-		DebugTraces:            DEFAULT_debugTraces}
+		DebugTraces:            DEFAULT_debugTraces,
+		JrdsPollingFrequency:   DEFAULT_jrdsPollingFrequencyInSeconds}
 }
 
 var GetJrdsCertificatePath = func() string {

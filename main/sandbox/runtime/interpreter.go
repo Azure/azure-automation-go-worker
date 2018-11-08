@@ -31,7 +31,7 @@ var getPowerShellInterpreter = func() Interpreter {
 var getPython2Interpreter = func() Interpreter {
 	return Interpreter{
 		language:    "Python2",
-		commandName: "pythonExtension",
+		commandName: "python",
 		arguments:   []string{}}
 }
 
