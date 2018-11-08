@@ -13,8 +13,7 @@
   "bypass_certificate_verification" : "",
   "enforce_runbook_signature_validation" : "",
   "gpg_public_keyring_path" : "",
-  "state_directory_path" : "",
-  "jrds_polling_frequency" : "",
+  "jrds_polling_frequency" : 10,
   "proxy_configuration_path" : "",
 
   "vm_id" : "",

@@ -17,20 +17,26 @@ import (
 )
 
 const (
-	logPrefix = "Log"
-	empty     = ""
+	empty = ""
+
+	logPrefix        = "Log"
+	debugTracePrefix = "[DebugTrace]"
 
 	traceDatetimeFormat = "2006-01-02T15:04:05.99"
 
 	cloudDebugLogType       = 0
 	cloudHybridTraceEventId = 16000
 
-	keywordError   = "Error"
-	keywordDebug   = "Debug"
-	keywordStartup = "Startup"
-	keywordRoutine = "Routine"
+	keywordError         = "Error"
+	keywordDebug         = "Debug"
+	keywordStartup       = "Startup"
+	keywordRoutine       = "Routine"
+	keywordInformational = "Informational"
+	keywordJob           = "Job"
 
-	tasknameTraceError = "TraceError"
+	tasknameTraceError     = "TraceError"
+	trasknameSandboxStdout = "SandboxStdout"
+	trasknameSandboxStderr = "SandboxStderr"
 )
 
 var (
@@ -72,15 +78,15 @@ func InitializeTracer(client jrdsTracer) {
 
 var traceGenericHybridWorkerDebugEvent = func(eventId int, taskName string, message string, keyword string) {
 	trace := NewTrace(eventId, taskName, message, keyword)
-	go traceGenericHybridWorkerEventRoutine(trace, true)
+	go traceGenericHybridWorkerEventRoutine(trace, true, false)
 }
 
 var traceGenericHybridWorkerEvent = func(eventId int, taskName string, message string, keyword string) {
 	trace := NewTrace(eventId, taskName, message, keyword)
-	go traceGenericHybridWorkerEventRoutine(trace, false)
+	go traceGenericHybridWorkerEventRoutine(trace, false, false)
 }
 
-var traceGenericHybridWorkerEventRoutine = func(trace trace, debug bool) {
+var traceGenericHybridWorkerEventRoutine = func(trace trace, debug bool, localonly bool) {
 	// do not log debug traces based on configuration
 	if !configuration.GetDebugTraces() && debug {
 		return
@@ -88,6 +94,10 @@ var traceGenericHybridWorkerEventRoutine = func(trace trace, debug bool) {
 
 	// local stdout
 	traceLocally(trace)
+
+	if localonly {
+		return
+	}
 
 	// cloud stdout
 	err := formatAndIssueTrace(trace)
@@ -119,9 +129,19 @@ var traceErrorLocally = func(message string) {
 }
 
 var traceLocally = func(trace trace) {
-	const format = "%s (%v)[%s] : [%s] %v \n"
-	var now = time.Now().Format(traceDatetimeFormat)
-	fmt.Printf(format, now, trace.processId, trace.component, trace.taskName, trace.message)
+	traceOutput := ""
+
+	if configuration.GetComponent() == configuration.Component_worker &&
+		trace.component == configuration.Component_sandbox {
+		const format = "%v \n"
+		traceOutput = fmt.Sprintf(format, trace.message)
+	} else {
+		const format = "%s (%v)[%s] : [%s] %v \n"
+		var now = time.Now().Format(traceDatetimeFormat)
+		traceOutput = fmt.Sprintf(format, now, trace.processId, trace.component, trace.taskName, trace.message)
+	}
+
+	fmt.Print(traceOutput)
 }
 
 var formatAndIssueTrace = func(trace trace) error {
@@ -184,6 +204,18 @@ var getTraceName = func() string {
 	return replacer.Replace(frame.Function)
 }
 
+func LogSandboxStdout(message string) {
+	trace := NewTrace(0, trasknameSandboxStdout, message, keywordInformational)
+	trace.component = configuration.Component_sandbox
+	go traceGenericHybridWorkerEventRoutine(trace, strings.Contains(message, debugTracePrefix), true)
+}
+
+func LogSandboxStderr(message string) {
+	trace := NewTrace(0, trasknameSandboxStderr, message, keywordInformational)
+	trace.component = configuration.Component_sandbox
+	go traceGenericHybridWorkerEventRoutine(trace, strings.Contains(message, debugTracePrefix), true)
+}
+
 func LogWorkerTraceError(message string) {
 	traceGenericHybridWorkerEvent(20000, getTraceName(), message, keywordStartup)
 }
@@ -192,8 +224,13 @@ func LogDebugTrace(message string) {
 	traceGenericHybridWorkerDebugEvent(20001, getTraceName(), message, keywordDebug)
 }
 
+func LogErrorTrace(error string) {
+	message := fmt.Sprintf("Error : %v", error)
+	traceGenericHybridWorkerDebugEvent(20001, getTraceName(), message, keywordDebug)
+}
+
 func LogWorkerStarting() {
-	message := "Worker Starting"
+	message := "Worker starting."
 	traceGenericHybridWorkerEvent(20020, getTraceName(), message, keywordStartup)
 }
 
@@ -210,4 +247,29 @@ func LogWorkerErrorGettingSandboxActions(err error) {
 func LogWorkerFailedToCreateSandbox(err error) {
 	message := fmt.Sprintf("Error creating sandbox. [error=%v]", err.Error())
 	traceGenericHybridWorkerEvent(20102, getTraceName(), message, keywordRoutine)
+}
+
+func LogWorkerSandboxProcessExited(sandboxId string, pid, exitCode int) {
+	message := fmt.Sprintf("Sandbox process exited. [sandboxId=%v][pId=%v][exitCode=%v]", sandboxId, pid, exitCode)
+	traceGenericHybridWorkerEvent(20102, getTraceName(), message, keywordRoutine)
+}
+
+func LogSandboxStarting(id string) {
+	message := fmt.Sprintf("Sandbox starting [sandboxId=%v]", id)
+	traceGenericHybridWorkerEvent(25000, getTraceName(), message, keywordStartup)
+}
+
+func LogSandboxGetJobActions(actions *jrds.JobActions) {
+	message := fmt.Sprintf("Get job actions. Found %v new action(s).", len(actions.Value))
+	traceGenericHybridWorkerEvent(25001, getTraceName(), message, keywordRoutine)
+}
+
+func LogSandboxJobLoaded(sandboxId, jobId string) {
+	message := fmt.Sprintf("Job loaded. [sandboxId=%v][jobId=%v]", sandboxId, jobId)
+	traceGenericHybridWorkerEvent(25010, getTraceName(), message, keywordJob)
+}
+
+func LogSandboxJobUnloaded(sandboxId, jobId string) {
+	message := fmt.Sprintf("Job unloaded. [sandboxId=%v][jobId=%v]", sandboxId, jobId)
+	traceGenericHybridWorkerEvent(25013, getTraceName(), message, keywordJob)
 }

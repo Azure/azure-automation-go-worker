@@ -75,28 +75,20 @@ var createAndStartSandbox = func(sandbox *sandbox.Sandbox) error {
 		return err
 	}
 
-	sandbox.Start()
+	err = sandbox.Start()
+	if err != nil {
+		return err
+	}
+
 	go monitorSandbox(sandbox)
 	return nil
 }
 
 var monitorSandbox = func(sandbox *sandbox.Sandbox) {
 	for sandbox.IsAlive() {
-		time.Sleep(time.Millisecond * 300) // TODO: temporary until async output is implemented
+		time.Sleep(time.Millisecond * 100) // TODO: temporary until async output is implemented
 	}
 
-	stdout, err := sandbox.GetOutput()
-	if err != nil {
-		fmt.Println("error getting sandbox sdout")
-	}
-	stderr, err := sandbox.GetErrorOutput()
-	if err != nil {
-		fmt.Println("error getting sandbox stderr")
-	}
-
-	fmt.Printf("%v : stdout [%v]\n", sandbox.Id, stdout)
-	fmt.Printf("%v : stderr [%v]\n", sandbox.Id, stderr)
-	fmt.Printf("Done monitoring sandbox %v \n", sandbox.Id)
 	sandbox.Cleanup()
 }
 
