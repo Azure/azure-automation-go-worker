@@ -8,6 +8,7 @@ import (
 	"github.com/Azure/azure-automation-go-worker/internal/configuration"
 	"github.com/Azure/azure-automation-go-worker/internal/jrds"
 	"github.com/Azure/azure-automation-go-worker/internal/tracer"
+	"github.com/Azure/azure-automation-go-worker/main/sandbox/job"
 	"os"
 	"time"
 )
@@ -19,7 +20,7 @@ type Sandbox struct {
 	jrdsClient           jrdsClient
 	jrdsPollingFrequency time.Duration
 
-	jobs map[string]*Job
+	jobs map[string]*job.Job
 }
 
 func NewSandbox(sandboxId string, jrdsClient jrdsClient) Sandbox {
@@ -27,7 +28,7 @@ func NewSandbox(sandboxId string, jrdsClient jrdsClient) Sandbox {
 		isAlive:              true,
 		jrdsClient:           jrdsClient,
 		jrdsPollingFrequency: time.Duration(int64(time.Second) * configuration.GetJrdsPollingFrequencyInSeconds()),
-		jobs:                 make(map[string]*Job, 1)}
+		jobs:                 make(map[string]*job.Job, 1)}
 }
 
 type jrdsClient interface {
@@ -71,7 +72,7 @@ var routine = func(sandbox *Sandbox) {
 			(jobData.PendingAction == nil && *jobData.JobStatus == 1) ||
 			(jobData.PendingAction == nil && *jobData.JobStatus == 2) {
 			// new job
-			job := NewJob(sandbox.id, jobData, sandbox.jrdsClient)
+			job := job.NewJob(sandbox.id, jobData, sandbox.jrdsClient)
 			sandbox.jobs[job.Id] = &job
 
 			go job.Run()
@@ -94,8 +95,8 @@ var routine = func(sandbox *Sandbox) {
 
 var stopTrackingCompletedJobs = func(sandbox *Sandbox) {
 	completedJob := make([]string, 1)
-	for jobId, job := range sandbox.jobs {
-		if job.Completed {
+	for jobId, runningJob := range sandbox.jobs {
+		if runningJob.Completed {
 			completedJob = append(completedJob, jobId)
 		}
 	}

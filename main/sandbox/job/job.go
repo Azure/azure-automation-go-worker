@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
-package main
+package job
 
 import (
 	"fmt"
@@ -42,6 +42,17 @@ type Job struct {
 	jrdsClient       jrdsClient
 }
 
+type jrdsClient interface {
+	GetJobActions(sandboxId string, jobData *jrds.JobActions) error
+	GetJobData(jobId string, jobData *jrds.JobData) error
+	GetUpdatableJobData(jobId string, jobData *jrds.JobUpdatableData) error
+	GetRunbookData(runbookVersionId string, runbookData *jrds.RunbookData) error
+	AcknowledgeJobAction(sandboxId string, messageMetadata jrds.MessageMetadatas) error
+	SetJobStatus(sandboxId string, jobId string, status int, isTermial bool, exception *string) error
+	SetJobStream(jobId string, runbookVersionId string, text string, streamType string, sequence int) error
+	UnloadJob(subscriptionId string, sandboxId string, jobId string, isTest bool, startTime time.Time, executionTimeInSeconds int) error
+}
+
 func NewJob(sandboxId string, jobData jrds.JobData, jrdsClient jrdsClient) Job {
 	workingDirectory := filepath.Join(configuration.GetWorkingDirectory(), *jobData.JobId)
 	err := os.MkdirAll(workingDirectory, 0750)
@@ -63,10 +74,10 @@ func (job *Job) Run() {
 	err := loadJob(job)
 	panicOnError(fmt.Sprintf("error loading job %v", err), err)
 
-	err = initializeRuntime(job)
-	panicOnError(fmt.Sprintf("error initializing runtime %v", err), err)
+	jobRuntime, err := initializeRuntime(job)
+	panicOnError(fmt.Sprintf("error initializing jobRuntime %v", err), err)
 
-	err = executeRunbook(job)
+	err = executeRunbook(jobRuntime, job)
 	panicOnError(fmt.Sprintf("error executing runbook %v", err), err)
 }
 
@@ -95,7 +106,7 @@ var loadJob = func(job *Job) error {
 	return nil
 }
 
-var initializeRuntime = func(job *Job) error {
+var initializeRuntime = func(job *Job) (*runtime.Runtime, error) {
 	// create runbook
 	runbook, err := runtime.NewRunbook(
 		*job.runbookData.Name,
@@ -103,20 +114,20 @@ var initializeRuntime = func(job *Job) error {
 		runtime.DefinitionKind(*job.runbookData.RunbookDefinitionKind),
 		*job.runbookData.Definition)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// create language; failed the job if the language isn't supported by the worker
 	language, err := runtime.GetLanguage(runbook.Kind)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// create runtime
 	runtime := runtime.NewRuntime(language, runbook, job.jobData, job.workingDirectory)
 	err = runtime.Initialize()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// test if is the runtime supported by the os
@@ -125,18 +136,16 @@ var initializeRuntime = func(job *Job) error {
 		tracer.LogErrorTrace("Runbook definition kind not supported")
 	}
 
-	runtime.StartRunbook()
-
-	return nil // TODO
+	return &runtime, nil
 }
 
-var executeRunbook = func(job *Job) error {
+var executeRunbook = func(runtime *runtime.Runtime, job *Job) error {
 	err := job.jrdsClient.SetJobStatus(job.sandboxId, job.Id, enum_statusRunning, false, nil)
 	panicOnError(fmt.Sprintf("error setting job status %v", err), err)
 
 	// temporary
 	// running job
-	time.Sleep(time.Second * 10)
+	runtime.StartRunbook()
 
 	// temporary
 	// check pending action while job is running
