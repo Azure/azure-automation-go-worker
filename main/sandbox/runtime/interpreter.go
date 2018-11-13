@@ -8,6 +8,8 @@ import (
 	"runtime"
 )
 
+const windows = "windows"
+
 type Interpreter struct {
 	language string
 
@@ -18,7 +20,7 @@ type Interpreter struct {
 var getPowerShellInterpreter = func() Interpreter {
 	commandName := "pwsh"
 
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == windows {
 		commandName = "powershell"
 	}
 
@@ -29,9 +31,14 @@ var getPowerShellInterpreter = func() Interpreter {
 }
 
 var getPython2Interpreter = func() Interpreter {
+	python := "python"
+	if runtime.GOOS == windows {
+		python = "C:\\python27\\python.exe"
+	}
+
 	return Interpreter{
 		language:    "Python2",
-		commandName: "python",
+		commandName: python,
 		arguments:   []string{}}
 }
 

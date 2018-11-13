@@ -22,7 +22,7 @@ const (
 	logPrefix        = "Log"
 	debugTracePrefix = "[DebugTrace]"
 
-	traceDatetimeFormat = "2006-01-02T15:04:05.99"
+	traceDatetimeFormat = "2006-01-02T15:04:05.00"
 
 	cloudDebugLogType       = 0
 	cloudHybridTraceEventId = 16000
@@ -264,6 +264,11 @@ func LogSandboxGetJobActions(actions *jrds.JobActions) {
 	traceGenericHybridWorkerEvent(25001, getTraceName(), message, keywordRoutine)
 }
 
+func LogSandboxJrdsClosureRequest(sandboxId string) {
+	message := fmt.Sprintf("Sandbox closure request received from JRDS. [sandboxId=%v]", sandboxId)
+	traceGenericHybridWorkerEvent(25004, getTraceName(), message, keywordRoutine)
+}
+
 func LogSandboxJobLoaded(sandboxId, jobId string) {
 	message := fmt.Sprintf("Job loaded. [sandboxId=%v][jobId=%v]", sandboxId, jobId)
 	traceGenericHybridWorkerEvent(25010, getTraceName(), message, keywordJob)
@@ -272,4 +277,9 @@ func LogSandboxJobLoaded(sandboxId, jobId string) {
 func LogSandboxJobUnloaded(sandboxId, jobId string) {
 	message := fmt.Sprintf("Job unloaded. [sandboxId=%v][jobId=%v]", sandboxId, jobId)
 	traceGenericHybridWorkerEvent(25013, getTraceName(), message, keywordJob)
+}
+
+func LogSandboxJobUnsupportedRunbookType(sandboxId, jobId string) {
+	message := fmt.Sprintf("Unsupported runbook type. [sandboxId=%v][jobId=%v]", sandboxId, jobId)
+	traceGenericHybridWorkerEvent(25014, getTraceName(), message, keywordJob)
 }

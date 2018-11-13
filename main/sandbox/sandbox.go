@@ -8,6 +8,7 @@ import (
 	"github.com/Azure/azure-automation-go-worker/internal/configuration"
 	"github.com/Azure/azure-automation-go-worker/internal/jrds"
 	"github.com/Azure/azure-automation-go-worker/internal/tracer"
+	"github.com/Azure/azure-automation-go-worker/main/sandbox/job"
 	"os"
 	"time"
 )
@@ -19,7 +20,7 @@ type Sandbox struct {
 	jrdsClient           jrdsClient
 	jrdsPollingFrequency time.Duration
 
-	jobs map[string]*Job
+	jobs map[string]*job.Job
 }
 
 func NewSandbox(sandboxId string, jrdsClient jrdsClient) Sandbox {
@@ -27,7 +28,7 @@ func NewSandbox(sandboxId string, jrdsClient jrdsClient) Sandbox {
 		isAlive:              true,
 		jrdsClient:           jrdsClient,
 		jrdsPollingFrequency: time.Duration(int64(time.Second) * configuration.GetJrdsPollingFrequencyInSeconds()),
-		jobs:                 make(map[string]*Job, 1)}
+		jobs:                 make(map[string]*job.Job, 1)}
 }
 
 type jrdsClient interface {
@@ -54,7 +55,15 @@ var routine = func(sandbox *Sandbox) {
 	err := sandbox.jrdsClient.GetJobActions(sandbox.id, &jobActions)
 	if err != nil {
 		sandbox.isAlive = false
-		tracer.LogErrorTrace(err.Error())
+
+		switch err.(type) {
+		case *jrds.RequestAuthorizationError:
+			tracer.LogSandboxJrdsClosureRequest(sandbox.id)
+			return
+		default:
+			tracer.LogErrorTrace(err.Error())
+			return
+		}
 	}
 
 	tracer.LogDebugTrace(fmt.Sprintf("Get job action. Found %v new action(s).", len(jobActions.Value)))
@@ -71,14 +80,15 @@ var routine = func(sandbox *Sandbox) {
 			(jobData.PendingAction == nil && *jobData.JobStatus == 1) ||
 			(jobData.PendingAction == nil && *jobData.JobStatus == 2) {
 			// new job
-			job := NewJob(sandbox.id, jobData, sandbox.jrdsClient)
+			job := job.NewJob(sandbox.id, jobData, sandbox.jrdsClient)
 			sandbox.jobs[job.Id] = &job
 
 			go job.Run()
-		} else if jobData.PendingAction != nil && *jobData.PendingAction == 5 {
+		} else if jobData.PendingAction != nil {
+			pendingAction := job.GetPendingAction(*jobData.PendingAction)
 			// stop pending action
 			if job, ok := sandbox.jobs[*jobData.JobId]; ok {
-				job.PendingActions <- *jobData.PendingAction
+				job.PendingActions <- pendingAction
 			}
 		} else if jobData.PendingAction == nil {
 			// no pending action
@@ -94,8 +104,8 @@ var routine = func(sandbox *Sandbox) {
 
 var stopTrackingCompletedJobs = func(sandbox *Sandbox) {
 	completedJob := make([]string, 1)
-	for jobId, job := range sandbox.jobs {
-		if job.Completed {
+	for jobId, runningJob := range sandbox.jobs {
+		if runningJob.Completed {
 			completedJob = append(completedJob, jobId)
 		}
 	}
