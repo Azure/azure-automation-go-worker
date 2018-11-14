@@ -76,10 +76,11 @@ var routine = func(sandbox *Sandbox) {
 			sandbox.jobs[job.Id] = &job
 
 			go job.Run()
-		} else if jobData.PendingAction != nil && *jobData.PendingAction == 5 {
+		} else if jobData.PendingAction != nil {
+			pendingAction := job.GetPendingAction(*jobData.PendingAction)
 			// stop pending action
 			if job, ok := sandbox.jobs[*jobData.JobId]; ok {
-				job.PendingActions <- *jobData.PendingAction
+				job.PendingActions <- pendingAction
 			}
 		} else if jobData.PendingAction == nil {
 			// no pending action

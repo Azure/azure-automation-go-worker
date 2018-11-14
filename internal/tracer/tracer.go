@@ -273,3 +273,8 @@ func LogSandboxJobUnloaded(sandboxId, jobId string) {
 	message := fmt.Sprintf("Job unloaded. [sandboxId=%v][jobId=%v]", sandboxId, jobId)
 	traceGenericHybridWorkerEvent(25013, getTraceName(), message, keywordJob)
 }
+
+func LogSandboxJobUnsupportedRunbookType(sandboxId, jobId, exception string) {
+	message := fmt.Sprintf("Unsupported runbook type. [sandboxId=%v][jobId=%v][exception=%v]", sandboxId, jobId, exception)
+	traceGenericHybridWorkerEvent(25014, getTraceName(), message, keywordJob)
+}

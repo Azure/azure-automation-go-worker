@@ -4,6 +4,7 @@
 package executil
 
 import (
+	"fmt"
 	"io"
 	"os/exec"
 )
@@ -39,4 +40,11 @@ func NewAsyncCommand(stdout func(str string), stderr func(str string), workingDi
 		IsRunning:        false}
 
 	return command
+}
+
+func (cmd *AsyncCommand) Kill() error {
+	if cmd.cmd == nil {
+		return fmt.Errorf("nil cmd")
+	}
+	return cmd.cmd.Process.Kill()
 }

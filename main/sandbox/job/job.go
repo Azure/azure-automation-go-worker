@@ -14,14 +14,6 @@ import (
 	"time"
 )
 
-const (
-	enum_statusActivating = 1
-	enum_statusRunning    = 2
-	enum_statusCompleted  = 3
-	enum_statusFailed     = 4
-	enum_statusStopped    = 5
-)
-
 type Job struct {
 	Id string
 
@@ -30,7 +22,7 @@ type Job struct {
 	Completed bool
 
 	// channels
-	PendingActions chan int
+	PendingActions chan PendingAction
 	Exceptions     chan string
 
 	jobData          jrds.JobData
@@ -66,29 +58,28 @@ func NewJob(sandboxId string, jobData jrds.JobData, jrdsClient jrdsClient) Job {
 		jrdsClient:       jrdsClient,
 		StartTime:        time.Now(),
 		Completed:        false,
-		PendingActions:   make(chan int),
+		PendingActions:   make(chan PendingAction),
 		Exceptions:       make(chan string)}
 }
 
 func (job *Job) Run() {
 	err := loadJob(job)
-	panicOnError(fmt.Sprintf("error loading job %v", err), err)
+	panicOnError(fmt.Sprintf("error loading job : %v", err), err)
 
 	jobRuntime, err := initializeRuntime(job)
 	panicOnError(fmt.Sprintf("error initializing jobRuntime %v", err), err)
 
-	err = executeRunbook(jobRuntime, job)
-	panicOnError(fmt.Sprintf("error executing runbook %v", err), err)
+	executeRunbook(jobRuntime, job)
+
+	err = unloadJob(job)
+	panicOnError(fmt.Sprintf("error unloading job : %v", err), err)
 }
 
 var loadJob = func(job *Job) error {
-	err := job.jrdsClient.SetJobStatus(job.sandboxId, job.Id, enum_statusActivating, false, nil)
-	if err != nil {
-		return err
-	}
+	setStatus(job, getActivatingStatus())
 
 	jobUpdatableData := jrds.JobUpdatableData{}
-	err = job.jrdsClient.GetUpdatableJobData(job.Id, &jobUpdatableData)
+	err := job.jrdsClient.GetUpdatableJobData(job.Id, &jobUpdatableData)
 	if err != nil {
 		return err
 	}
@@ -130,41 +121,42 @@ var initializeRuntime = func(job *Job) (*runtime.Runtime, error) {
 		return nil, err
 	}
 
-	// test if is the runtime supported by the os
-	supp := runtime.IsSupported()
-	if !supp {
-		tracer.LogErrorTrace("Runbook definition kind not supported")
-	}
-
 	return &runtime, nil
 }
 
-var executeRunbook = func(runtime *runtime.Runtime, job *Job) error {
-	err := job.jrdsClient.SetJobStatus(job.sandboxId, job.Id, enum_statusRunning, false, nil)
-	panicOnError(fmt.Sprintf("error setting job status %v", err), err)
-
-	// temporary
-	// running job
-	runtime.StartRunbook()
-
-	// temporary
-	// check pending action while job is running
-	if action, found := getPendingActions(job); found {
-		if action == 5 {
-			err = job.jrdsClient.SetJobStatus(job.sandboxId, job.Id, enum_statusStopped, true, nil)
-			panicOnError(fmt.Sprintf("error stopping job %v", err), err)
-			return nil
-		}
+var executeRunbook = func(runtime *runtime.Runtime, job *Job) {
+	// test if is the runtime supported by the os
+	supp := runtime.IsSupported()
+	if !supp {
+		tracer.LogSandboxJobUnsupportedRunbookType(job.sandboxId, job.Id, fmt.Sprintf("Runtime not supported"))
+		setStatus(job, getFailedStatus("Language not supported on this host."))
 	}
 
-	err = job.jrdsClient.SetJobStatus(job.sandboxId, job.Id, enum_statusCompleted, true, nil)
-	panicOnError(fmt.Sprintf("error setting job status %v", err), err)
+	setStatus(job, getRunningStatus())
 
-	err = unloadJob(job)
-	panicOnError(fmt.Sprintf("error unloading job %v", err), err)
+	streamHandler := NewStreamHandler(job.jrdsClient, job.Id, *job.jobData.RunbookVersionId)
+	runtime.StartRunbookAsync(streamHandler.SetStream)
+
+	// check pending action while job is running
+	stopped := false
+	for runtime.IsRunbookRunning() {
+		if action, found := getPendingActions(job); found {
+			if action.Enum == Stop {
+				runtime.StopRunbook()
+				stopped = true
+				break
+			}
+		}
+		time.Sleep(time.Millisecond * 10)
+	}
+
+	if stopped {
+		setStatus(job, getStoppedStatus())
+	} else {
+		setStatus(job, getCompletedStatus())
+	}
 
 	job.Completed = true
-	return nil
 }
 
 var unloadJob = func(job *Job) error {
@@ -178,18 +170,24 @@ var unloadJob = func(job *Job) error {
 	return nil
 }
 
-var panicOnError = func(message string, err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
-var getPendingActions = func(job *Job) (pendingAction int, found bool) {
+var getPendingActions = func(job *Job) (pendingAction PendingAction, found bool) {
+	// read from channel without blocking
 	select {
 	case action := <-job.PendingActions:
 		return action, true
 	default:
 	}
 
-	return -1, false
+	return PendingAction{}, false
+}
+
+var setStatus = func(job *Job, jobstatus status) {
+	err := job.jrdsClient.SetJobStatus(job.sandboxId, job.Id, jobstatus.enum, jobstatus.isTerminal, jobstatus.exception)
+	panicOnError(fmt.Sprintf("error setting job status : %v", err), err)
+}
+
+var panicOnError = func(message string, err error) {
+	if err != nil {
+		panic(err)
+	}
 }
