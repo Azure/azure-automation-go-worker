@@ -55,7 +55,15 @@ var routine = func(sandbox *Sandbox) {
 	err := sandbox.jrdsClient.GetJobActions(sandbox.id, &jobActions)
 	if err != nil {
 		sandbox.isAlive = false
-		tracer.LogErrorTrace(err.Error())
+
+		switch err.(type) {
+		case *jrds.RequestAuthorizationError:
+			tracer.LogSandboxJrdsClosureRequest(sandbox.id)
+			return
+		default:
+			tracer.LogErrorTrace(err.Error())
+			return
+		}
 	}
 
 	tracer.LogDebugTrace(fmt.Sprintf("Get job action. Found %v new action(s).", len(jobActions.Value)))

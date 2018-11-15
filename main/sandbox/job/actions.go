@@ -1,6 +1,7 @@
 package job
 
 const (
+	None      = 0
 	Activate  = 1
 	Abort     = 2
 	Suspend   = 3
@@ -33,5 +34,5 @@ func GetPendingAction(enum int) PendingAction {
 		return PendingAction{Enum: Remove, Name: "Remove"}
 	}
 
-	return PendingAction{Enum: 0, Name: "None"}
+	return PendingAction{Enum: None, Name: "None"}
 }

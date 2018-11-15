@@ -17,9 +17,9 @@ func TestStreamHandler_SetStream_Debug(t *testing.T) {
 	jrds := clientMock{}
 	streamClient := NewStreamHandler(&jrds, "", "")
 
-	streamType := ""
+	sType := ""
 	jrds.setStream_f = func(jobId string, runbookVersionId string, text string, streamType string, sequence int) error {
-		streamType = streamType
+		sType = streamType
 		return nil
 	}
 
@@ -27,19 +27,19 @@ func TestStreamHandler_SetStream_Debug(t *testing.T) {
 
 	prefix := "debug:"
 	streamClient.SetStream(fmt.Sprintf(format, prefix))
-	if streamType != typeDebug {
+	if sType != typeDebug {
 		t.Fatalf("unexpected stream type for prefix : %v", prefix)
 	}
 
 	prefix = "Debug:"
 	streamClient.SetStream(fmt.Sprintf(format, prefix))
-	if streamType != typeDebug {
+	if sType != typeDebug {
 		t.Fatalf("unexpected stream type for prefix : %v", prefix)
 	}
 
 	prefix = "DEBUG:"
 	streamClient.SetStream(fmt.Sprintf(format, prefix))
-	if streamType != typeDebug {
+	if sType != typeDebug {
 		t.Fatalf("unexpected stream type for prefix : %v", prefix)
 	}
 

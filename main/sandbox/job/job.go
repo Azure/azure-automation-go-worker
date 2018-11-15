@@ -25,6 +25,7 @@ type Job struct {
 	PendingActions chan PendingAction
 	Exceptions     chan string
 
+	// job related
 	jobData          jrds.JobData
 	jobUpdatableData jrds.JobUpdatableData
 	runbookData      jrds.RunbookData
@@ -125,11 +126,12 @@ var initializeRuntime = func(job *Job) (*runtime.Runtime, error) {
 }
 
 var executeRunbook = func(runtime *runtime.Runtime, job *Job) {
-	// test if is the runtime supported by the os
-	supp := runtime.IsSupported()
-	if !supp {
-		tracer.LogSandboxJobUnsupportedRunbookType(job.sandboxId, job.Id, fmt.Sprintf("Runtime not supported"))
+	// test if is the runtime supported on the host
+	supported := runtime.IsSupported()
+	if !supported {
+		tracer.LogSandboxJobUnsupportedRunbookType(job.sandboxId, job.Id)
 		setStatus(job, getFailedStatus("Language not supported on this host."))
+		return
 	}
 
 	setStatus(job, getRunningStatus())
@@ -152,8 +154,10 @@ var executeRunbook = func(runtime *runtime.Runtime, job *Job) {
 
 	if stopped {
 		setStatus(job, getStoppedStatus())
-	} else {
+	} else if runtime.IsRunbookExecutionSuccessful() {
 		setStatus(job, getCompletedStatus())
+	} else {
+		setStatus(job, getFailedStatus(runtime.GetRunbookError()))
 	}
 
 	job.Completed = true

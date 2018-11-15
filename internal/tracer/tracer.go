@@ -264,6 +264,11 @@ func LogSandboxGetJobActions(actions *jrds.JobActions) {
 	traceGenericHybridWorkerEvent(25001, getTraceName(), message, keywordRoutine)
 }
 
+func LogSandboxJrdsClosureRequest(sandboxId string) {
+	message := fmt.Sprintf("Sandbox closure request received from JRDS. [sandboxId=%v]", sandboxId)
+	traceGenericHybridWorkerEvent(25004, getTraceName(), message, keywordRoutine)
+}
+
 func LogSandboxJobLoaded(sandboxId, jobId string) {
 	message := fmt.Sprintf("Job loaded. [sandboxId=%v][jobId=%v]", sandboxId, jobId)
 	traceGenericHybridWorkerEvent(25010, getTraceName(), message, keywordJob)
@@ -274,7 +279,7 @@ func LogSandboxJobUnloaded(sandboxId, jobId string) {
 	traceGenericHybridWorkerEvent(25013, getTraceName(), message, keywordJob)
 }
 
-func LogSandboxJobUnsupportedRunbookType(sandboxId, jobId, exception string) {
-	message := fmt.Sprintf("Unsupported runbook type. [sandboxId=%v][jobId=%v][exception=%v]", sandboxId, jobId, exception)
+func LogSandboxJobUnsupportedRunbookType(sandboxId, jobId string) {
+	message := fmt.Sprintf("Unsupported runbook type. [sandboxId=%v][jobId=%v]", sandboxId, jobId)
 	traceGenericHybridWorkerEvent(25014, getTraceName(), message, keywordJob)
 }

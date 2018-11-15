@@ -46,11 +46,11 @@ func (runtime *Runtime) IsSupported() bool {
 	return runtime.language.interpreter.isSupported()
 }
 
-func (runtime *Runtime) StartRunbookAsync(t func(string)) {
+func (runtime *Runtime) StartRunbookAsync(streamHandler func(string)) {
 	arguments := append(runtime.language.interpreter.arguments, getRunbookPathOnDisk(runtime.workingDirectory, runtime.runbook))
 	handler := executil.GetAsyncCommandHandler()
 	cmd := executil.NewAsyncCommand(
-		t,
+		streamHandler,
 		rbStderr,
 		runtime.workingDirectory,
 		nil,
@@ -80,6 +80,10 @@ func (runtime *Runtime) ExitCode() int {
 
 func (runtime *Runtime) GetRunbookError() string {
 	return runbookError
+}
+
+func (runtime *Runtime) IsRunbookExecutionSuccessful() bool {
+	return runtime.runbookCmd.ExitCode == 0
 }
 
 var getRunbookPathOnDisk = func(workingDirectory string, runbook Runbook) string {

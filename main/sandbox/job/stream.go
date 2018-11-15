@@ -5,7 +5,6 @@ package job
 
 import (
 	"fmt"
-	"github.com/Azure/azure-automation-go-worker/internal/tracer"
 	"strings"
 )
 
@@ -31,6 +30,8 @@ type StreamHandler struct {
 	runbookVersionId string
 	jobId            string
 	sequence         int
+
+	done chan bool
 }
 
 type streamClient interface {
@@ -42,7 +43,8 @@ func NewStreamHandler(client streamClient, jobId, runbookVersionId string) Strea
 		client:           client,
 		runbookVersionId: runbookVersionId,
 		jobId:            jobId,
-		sequence:         0}
+		sequence:         -1,
+		done:             make(chan bool)}
 }
 
 func (s *StreamHandler) SetStream(message string) {
@@ -70,10 +72,9 @@ func (s *StreamHandler) SetStream(message string) {
 		streamType = typeProgress
 	}
 
-	tracer.LogDebugTrace(fmt.Sprintf("stream type :%v ", streamType))
+	s.sequence += 1
 	err := s.client.SetJobStream(s.jobId, s.runbookVersionId, message, streamType, s.sequence)
 	if err != nil {
 		panic(err)
 	}
-	s.sequence += 1
 }
