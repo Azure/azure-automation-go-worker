@@ -13,7 +13,7 @@ On Linux :
 make
 ```
 
-After building, the `/bin` folder will contain 2 executable (one for the main worker and an other one for sandboxes).
+After building, the `/bin` folder will contain 2 executables (one for the main worker and an other one for sandboxes).
 
 # Worker configuration
 A configuration which contains the following required key is required to run the hybrid worker.
