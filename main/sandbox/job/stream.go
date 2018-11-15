@@ -30,8 +30,6 @@ type StreamHandler struct {
 	runbookVersionId string
 	jobId            string
 	sequence         int
-
-	done chan bool
 }
 
 type streamClient interface {
@@ -43,8 +41,7 @@ func NewStreamHandler(client streamClient, jobId, runbookVersionId string) Strea
 		client:           client,
 		runbookVersionId: runbookVersionId,
 		jobId:            jobId,
-		sequence:         -1,
-		done:             make(chan bool)}
+		sequence:         -1}
 }
 
 func (s *StreamHandler) SetStream(message string) {
