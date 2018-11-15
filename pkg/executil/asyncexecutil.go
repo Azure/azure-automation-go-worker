@@ -47,12 +47,12 @@ func executeAsyncCommand(command *AsyncCommand) error {
 func startAndMonitorCommand(command *AsyncCommand) {
 	// scan stdout
 	if command.stdoutPipe != nil && command.stdout_f != nil {
-		NewScanner(command.stdout_f, command.stdoutPipe)
+		newScanner(command.stdout_f, command.stdoutPipe)
 	}
 
 	// scan stderr
 	if command.stderrPipe != nil && command.stderr_f != nil {
-		NewScanner(command.stderr_f, command.stderrPipe)
+		newScanner(command.stderr_f, command.stderrPipe)
 	}
 
 	// wait for command to complete
@@ -75,7 +75,7 @@ func startAndMonitorCommand(command *AsyncCommand) {
 	command.IsSuccessful = true
 }
 
-func NewScanner(print func(str string), reader io.Reader) *bufio.Scanner {
+func newScanner(print func(str string), reader io.Reader) *bufio.Scanner {
 	scanner := bufio.NewScanner(reader)
 	scanner.Split(bufio.ScanLines)
 	for scanner.Scan() {
