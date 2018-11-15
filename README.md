@@ -1,3 +1,48 @@
+The azure automation worker is mainly used to run script on Azure virtual machine. These script can be part of the update management solution or standalone to run automation tasks.
+
+# Requirement 
+Go 1.10
+
+# Build
+On Windows :
+```cmd
+build.cmd
+```
+On Linux :
+```sh
+make
+```
+
+After building, the `/bin` folder will contain 2 executable (one for the main worker and an other one for sandboxes).
+
+# Worker configuration
+A configuration which contains the following required key is required to run the hybrid worker.
+
+```json
+{
+  "jrds_cert_path" : "",
+  "jrds_key_path" : "",
+  "jrds_base_uri" : "",
+
+  "account_id" : "",
+  "machine_id" : "",
+  "hybrid_worker_group_name" : "",
+  "worker_version" : "",
+  "working_directory_path" : ""
+}
+```
+
+# Executing the worker
+To start the hybrid worker run :
+```sh
+./worker <path_to_your_configuration>
+```
+
+# Missing features
+- Proxy support
+- Python automation assets
+- Signature validation
+- Http client retry logic
 
 # Contributing
 
