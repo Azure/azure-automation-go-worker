@@ -4,9 +4,7 @@
 package runtime
 
 import (
-	"fmt"
 	"github.com/Azure/azure-automation-go-worker/internal/jrds"
-	"github.com/Azure/azure-automation-go-worker/internal/tracer"
 	"github.com/Azure/azure-automation-go-worker/pkg/executil"
 	"os"
 	"path/filepath"
