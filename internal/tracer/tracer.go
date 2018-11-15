@@ -22,7 +22,7 @@ const (
 	logPrefix        = "Log"
 	debugTracePrefix = "[DebugTrace]"
 
-	traceDatetimeFormat = "2006-01-02T15:04:05.99"
+	traceDatetimeFormat = "2006-01-02T15:04:05.00"
 
 	cloudDebugLogType       = 0
 	cloudHybridTraceEventId = 16000
