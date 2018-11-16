@@ -31,7 +31,7 @@ var getPowerShellInterpreter = func() Interpreter {
 }
 
 var getPython2Interpreter = func() Interpreter {
-	python := "python"
+	python := "python2"
 	if runtime.GOOS == windows {
 		python = "C:\\python27\\python.exe"
 	}

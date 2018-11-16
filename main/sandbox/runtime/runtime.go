@@ -92,7 +92,7 @@ var getRunbookPathOnDisk = func(workingDirectory string, runbook Runbook) string
 
 var writeRunbookToDisk = func(path string, runbook Runbook) error {
 	const permission = 0640
-	file, err := os.OpenFile(path, os.O_RDONLY|os.O_CREATE, permission)
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, permission)
 	if err != nil {
 		return err
 	}
