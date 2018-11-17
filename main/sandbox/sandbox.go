@@ -123,8 +123,8 @@ func main() {
 	}
 	sandboxId := os.Args[1]
 
-	httpClient := httputil.NewSecureHttpClient(configuration.GetJrdsCertificatePath(), configuration.GetJrdsKeyPath(), httputil.LinearRetryThrice)
-	jrdsClient := jrds.NewJrdsClient(&httpClient, configuration.GetJrdsBaseUri(), configuration.GetAccountId(), configuration.GetHybridWorkerGroupName())
+	httpClient := httputil.NewSecureHttpClientWithCertificates(configuration.GetJrdsCertificatePath(), configuration.GetJrdsKeyPath(), httputil.LinearRetryThrice)
+	jrdsClient := jrds.NewJrdsClient(httpClient, configuration.GetJrdsBaseUri(), configuration.GetAccountId(), configuration.GetHybridWorkerGroupName())
 	tracer.InitializeTracer(&jrdsClient)
 
 	tracer.LogSandboxStarting(sandboxId)
