@@ -8,7 +8,6 @@ import (
 	"github.com/Azure/azure-automation-go-worker/internal/jrds"
 	"github.com/Azure/azure-automation-go-worker/main/worker/sandbox"
 	"testing"
-	"time"
 )
 
 type jrdsMock struct {
@@ -73,7 +72,7 @@ func TestWorker_Start_CreatesMultipleSandboxesForMultipleActionForUniqueSandboxI
 
 	for _, id := range testSandboxIds {
 		if _, ok := worker.sandboxCollection[id]; !ok {
-			t.Fatal("sandbox %v not tracked", id)
+			t.Fatalf("sandbox %s not tracked", id)
 		}
 	}
 
@@ -105,7 +104,7 @@ func TestWorker_Start_DoestNotCreateSandboxOnEmptySandboxActions(t *testing.T) {
 }
 
 func Setup() {
-	configuration.GetJrdsPollingFrequencyInSeconds = func() time.Duration {
+	configuration.GetJrdsPollingFrequencyInSeconds = func() int64 {
 		return 1
 	}
 	createAndStartSandbox = func(sandbox *sandbox.Sandbox) error {
