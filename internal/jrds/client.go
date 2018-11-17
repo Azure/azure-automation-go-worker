@@ -6,6 +6,7 @@ package jrds
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/Azure/azure-extension-foundation/httputil"
 	"time"
 )
 
@@ -15,7 +16,7 @@ type JrdsClient struct {
 	workerGroupName string
 	workerVersion   string
 	protocolVersion string
-	client          httpClient
+	client          httputil.HttpClient
 }
 
 const (
@@ -30,12 +31,7 @@ const (
 	datetimeFormat = "2006-01-02T15:04:05.999999"
 )
 
-type httpClient interface {
-	Get(url string, headers map[string]string) (responseCode int, body []byte, err error)
-	Post(url string, headers map[string]string, payload []byte) (responseCode int, body []byte, err error)
-}
-
-func NewJrdsClient(client httpClient, baseUri string, accountId string, workerGroupName string) JrdsClient {
+func NewJrdsClient(client httputil.HttpClient, baseUri string, accountId string, workerGroupName string) JrdsClient {
 	return JrdsClient{baseUri: baseUri, client: client, accountId: accountId, workerGroupName: workerGroupName, protocolVersion: "1.0", workerVersion: "2.0.0.0"}
 }
 
