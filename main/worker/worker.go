@@ -9,6 +9,7 @@ import (
 	"github.com/Azure/azure-automation-go-worker/internal/jrds"
 	"github.com/Azure/azure-automation-go-worker/internal/tracer"
 	"github.com/Azure/azure-automation-go-worker/main/worker/sandbox"
+	"github.com/Azure/azure-extension-foundation/httputil"
 	"os"
 	"time"
 )
@@ -99,7 +100,7 @@ func main() {
 		panic(err)
 	}
 
-	httpClient := jrds.NewSecureHttpClient(configuration.GetJrdsCertificatePath(), configuration.GetJrdsKeyPath())
+	httpClient := httputil.NewSecureHttpClient(configuration.GetJrdsCertificatePath(), configuration.GetJrdsKeyPath(), httputil.LinearRetryThrice)
 	jrdsClient := jrds.NewJrdsClient(&httpClient, configuration.GetJrdsBaseUri(), configuration.GetAccountId(), configuration.GetHybridWorkerGroupName())
 	tracer.InitializeTracer(&jrdsClient)
 
