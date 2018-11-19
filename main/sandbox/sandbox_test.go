@@ -5,6 +5,7 @@ package main
 
 import (
 	"github.com/Azure/azure-automation-go-worker/internal/jrds"
+	"github.com/Azure/azure-automation-go-worker/main/sandbox/job"
 	"testing"
 	"time"
 )
@@ -60,7 +61,7 @@ func Test_CleanCompletedJobs_DoesNotCleanRunningJobs(t *testing.T) {
 	sbx := NewSandbox(sandboxId, nil)
 
 	//create job
-	job := NewJob(sandboxId, jrds.JobData{JobId: &jobId}, nil)
+	job := job.NewJob(sandboxId, jrds.JobData{JobId: &jobId}, nil)
 	sbx.jobs[jobId] = &job
 
 	stopTrackingCompletedJobs(&sbx)
@@ -79,7 +80,7 @@ func Test_CleanCompletedJobs_CleansCompletedJobs(t *testing.T) {
 	}
 
 	// create job
-	job := NewJob(sandboxId, jrds.JobData{JobId: &jobId, SubscriptionId: &subscriptionId}, &jrdsMock)
+	job := job.NewJob(sandboxId, jrds.JobData{JobId: &jobId, SubscriptionId: &subscriptionId}, &jrdsMock)
 	job.Completed = true
 	job.StartTime = time.Now()
 
