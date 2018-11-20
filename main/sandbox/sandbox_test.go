@@ -77,6 +77,7 @@ func Test_CleanCompletedJobs_CleansCompletedJobs(t *testing.T) {
 	// create job
 	job := job.NewJob(sandboxId, jrds.JobData{JobId: &jobId, SubscriptionId: &subscriptionId}, &jrdsMock)
 	job.Completed = true
+	a := false
 	job.StartTime = time.Now()
 
 	// create sandbox
