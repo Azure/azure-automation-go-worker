@@ -72,12 +72,7 @@ func Test_CleanCompletedJobs_DoesNotCleanRunningJobs(t *testing.T) {
 
 func Test_CleanCompletedJobs_CleansCompletedJobs(t *testing.T) {
 	// create jrdsmock
-	unloadCalled := false
 	jrdsMock := jrdsMock{}
-	jrdsMock.unloadJob_f = func(subscriptionId string, sandboxId string, jobId string, isTest bool, startTime time.Time, executionTimeInSeconds int) error {
-		unloadCalled = true
-		return nil
-	}
 
 	// create job
 	job := job.NewJob(sandboxId, jrds.JobData{JobId: &jobId, SubscriptionId: &subscriptionId}, &jrdsMock)
@@ -93,9 +88,5 @@ func Test_CleanCompletedJobs_CleansCompletedJobs(t *testing.T) {
 	j := sbx.jobs[jobId]
 	if j != nil {
 		t.Fatal("unexpected error : job is still tracked by sandbox")
-	}
-
-	if !unloadCalled {
-		t.Fatal("unexpected error : job was not unloaded")
 	}
 }

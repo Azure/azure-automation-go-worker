@@ -55,7 +55,7 @@ func TestLoadConfiguration_OverrideDefaultValues(t *testing.T) {
 
 	err := LoadConfiguration(testPath)
 	if err != nil {
-		t.Fatal("unexpected error while loading configuration : %v", err)
+		t.Fatalf("unexpected error while loading configuration : %v", err)
 	}
 
 	if GetWorkerVersion() != testConfig.WorkerVersion {

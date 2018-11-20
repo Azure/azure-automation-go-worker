@@ -23,9 +23,24 @@ type BodyMock struct {
 
 var customError = fmt.Errorf("custom error")
 
+type httpClient interface {
+	Get(url string, headers map[string]string) (responseCode int, body []byte, err error)
+	Post(url string, headers map[string]string, payload []byte) (responseCode int, body []byte, err error)
+	Put(url string, headers map[string]string, payload []byte) (responseCode int, body []byte, err error)
+	Delete(url string, headers map[string]string, payload []byte) (responseCode int, body []byte, err error)
+}
+
 type httpClientMock struct {
 	get_f  func(url string, headers map[string]string) (responseCode int, body []byte, err error)
 	post_f func(url string, headers map[string]string, payload []byte) (responseCode int, body []byte, err error)
+}
+
+func (c httpClientMock) Delete(url string, headers map[string]string, payload []byte) (responseCode int, body []byte, err error) {
+	panic("implement me")
+}
+
+func (c httpClientMock) Put(url string, headers map[string]string, payload []byte) (responseCode int, body []byte, err error) {
+	panic("implement me")
 }
 
 func (c httpClientMock) Get(url string, headers map[string]string) (responseCode int, body []byte, err error) {
