@@ -1,8 +1,9 @@
+MAKEFLAGS += --silent
 BINDIR=bin
 BIN_WORKER=worker
 BIN_SANDBOX=sandbox
 
-binary: clean
+binary: clean test
 	if [ -z "$$GOPATH" ]; then \
 	  echo "GOPATH is not set"; \
 	  exit 1; \
@@ -17,5 +18,13 @@ binary: clean
 
 clean:
 	rm -rf "$(BINDIR)"
+
+test:
+	if [ -z "$$GOPATH" ]; then \
+	  echo "GOPATH is not set"; \
+	  exit 1; \
+	fi
+
+	go test ./...
 
 .PHONY: clean binary

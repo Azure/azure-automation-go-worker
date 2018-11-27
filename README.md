@@ -32,8 +32,8 @@ A configuration which contains the following required key is required to run the
 }
 ```
 
-# Executing the worker
-To start the hybrid worker run :
+# Run
+To start the hybrid worker execute :
 ```sh
 ./worker <path_to_your_configuration>
 ```
