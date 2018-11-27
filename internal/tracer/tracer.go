@@ -7,18 +7,16 @@ import (
 	"fmt"
 	"github.com/Azure/azure-automation-go-worker/internal/configuration"
 	"github.com/Azure/azure-automation-go-worker/internal/jrds"
-	"math/rand"
 	"os"
 	"reflect"
 	"runtime"
-	"strconv"
 	"strings"
-	"time"
 )
 
 const (
 	empty = ""
 
+	localLogFilename = "worker.log"
 	logPrefix        = "Log"
 	debugTracePrefix = "[DebugTrace]"
 
@@ -68,6 +66,23 @@ type trace struct {
 	hybridWorkerVersion   string
 }
 
+var NewTrace = func(eventId int, taskName string, message string, keyword string) trace {
+	return trace{
+		component:             configuration.GetComponent(),
+		threadId:              1, // thread id are not exposed in go but this field is require for cloud traces
+		processId:             os.Getpid(),
+		eventId:               eventId,
+		taskName:              taskName,
+		message:               message,
+		keyword:               keyword,
+		activityId:            activityId,
+		accountId:             configuration.GetAccountId(),
+		subscriptionId:        empty,
+		machineId:             empty,
+		hybridWorkerGroupName: configuration.GetHybridWorkerGroupName(),
+		hybridWorkerVersion:   configuration.GetWorkerVersion()}
+}
+
 type jrdsTracer interface {
 	SetLog(eventId int, activityId string, logType int, args ...string) error
 }
@@ -104,92 +119,6 @@ var traceGenericHybridWorkerEventRoutine = func(trace trace, debug bool, localon
 	if err != nil {
 		traceErrorLocally(fmt.Sprintf("error while calling formatAndIssueTrace : %v \n", err))
 	}
-}
-
-var NewTrace = func(eventId int, taskName string, message string, keyword string) trace {
-	return trace{
-		component:             configuration.GetComponent(),
-		threadId:              1, // thread id are not exposed in go but this field is require for cloud traces
-		processId:             os.Getpid(),
-		eventId:               eventId,
-		taskName:              taskName,
-		message:               message,
-		keyword:               keyword,
-		activityId:            activityId,
-		accountId:             configuration.GetAccountId(),
-		subscriptionId:        empty,
-		machineId:             empty,
-		hybridWorkerGroupName: configuration.GetHybridWorkerGroupName(),
-		hybridWorkerVersion:   configuration.GetWorkerVersion()}
-}
-
-var traceErrorLocally = func(message string) {
-	errorTrace := NewTrace(0, tasknameTraceError, message, keywordError)
-	traceLocally(errorTrace)
-}
-
-var traceLocally = func(trace trace) {
-	traceOutput := ""
-
-	if configuration.GetComponent() == configuration.Component_worker &&
-		trace.component == configuration.Component_sandbox {
-		const format = "%v \n"
-		traceOutput = fmt.Sprintf(format, trace.message)
-	} else {
-		const format = "%s (%v)[%s] : [%s] %v \n"
-		var now = time.Now().Format(traceDatetimeFormat)
-		traceOutput = fmt.Sprintf(format, now, trace.processId, trace.component, trace.taskName, trace.message)
-	}
-
-	fmt.Print(traceOutput)
-}
-
-var formatAndIssueTrace = func(trace trace) error {
-	// this format matches the cloud etw manifest; do not reorder
-	cloudTraceFormat := []string{
-		trace.accountId,
-		trace.subscriptionId,
-		trace.hybridWorkerGroupName,
-		trace.machineId,
-		trace.component,
-		strconv.Itoa(trace.eventId),
-		trace.taskName,
-		trace.keyword,
-		strconv.Itoa(trace.threadId),
-		strconv.Itoa(trace.processId),
-		trace.activityId,
-		trace.hybridWorkerVersion,
-		trace.message,
-	}
-
-	err := issueJrdsTrace(cloudHybridTraceEventId, activityId, cloudDebugLogType, cloudTraceFormat)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-var issueJrdsTrace = func(eventId int, activityId string, logType int, arg []string) error {
-	if jrdsClient == nil {
-		return fmt.Errorf("error emitting trace; nil jrds client in tracer package \n")
-	}
-
-	err := jrdsClient.SetLog(eventId, activityId, logType, arg...)
-	if err != nil {
-		return fmt.Errorf("error emitting trace to jrds : %v \n", err)
-	}
-
-	return nil
-}
-
-// generateActivityId generates a somewhat unique uuid; this isn't a proper uuid implementation and should only
-// be used temporally until we have time to implement a proper uuid generation algorithm
-var generateActivityId = func() string {
-	b := make([]byte, 16)
-
-	rand.Read(b)
-	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16])
 }
 
 var getTraceName = func() string {
