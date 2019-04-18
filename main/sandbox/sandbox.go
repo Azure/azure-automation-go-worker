@@ -10,6 +10,8 @@ import (
 	"github.com/Azure/azure-automation-go-worker/internal/tracer"
 	"github.com/Azure/azure-automation-go-worker/main/sandbox/job"
 	"github.com/Azure/azure-extension-foundation/httputil"
+	"github.com/Azure/azure-extension-foundation/msi"
+	"github.com/Azure/azure-extension-foundation/msihttpclient"
 	"os"
 	"time"
 )
@@ -123,8 +125,10 @@ func main() {
 	}
 	sandboxId := os.Args[1]
 
-	httpClient := httputil.NewSecureHttpClientWithCertificates(configuration.GetJrdsCertificatePath(), configuration.GetJrdsKeyPath(), httputil.LinearRetryThrice)
-	jrdsClient := jrds.NewJrdsClient(httpClient, configuration.GetJrdsBaseUri(), configuration.GetAccountId(), configuration.GetHybridWorkerGroupName())
+	httpClient := httputil.NewSecureHttpClient(httputil.DefaultRetryBehavior)
+	msiProvider := msi.NewMsiProvider(httpClient)
+	msiHttpClient := msihttpclient.NewMsiHttpClient(&msiProvider, httputil.DefaultRetryBehavior)
+	jrdsClient := jrds.NewJrdsClient(msiHttpClient, configuration.GetJrdsBaseUri(), configuration.GetAccountId(), configuration.GetHybridWorkerGroupName())
 	tracer.InitializeTracer(&jrdsClient)
 
 	tracer.LogSandboxStarting(sandboxId)
