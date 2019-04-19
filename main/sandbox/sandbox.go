@@ -10,6 +10,7 @@ import (
 	"github.com/Azure/azure-automation-go-worker/internal/tracer"
 	"github.com/Azure/azure-automation-go-worker/main/sandbox/job"
 	"github.com/Azure/azure-extension-foundation/httputil"
+	"github.com/Azure/azure-extension-foundation/metadata"
 	"github.com/Azure/azure-extension-foundation/msi"
 	"github.com/Azure/azure-extension-foundation/msihttpclient"
 	"os"
@@ -127,7 +128,13 @@ func main() {
 
 	httpClient := httputil.NewSecureHttpClient(httputil.DefaultRetryBehavior)
 	msiProvider := msi.NewMsiProvider(httpClient)
-	msiHttpClient := msihttpclient.NewMsiHttpClient(&msiProvider, httputil.DefaultRetryBehavior)
+	metadataProvider := metadata.NewMetadataProvider(httpClient)
+	vmMetadata, err := metadataProvider.GetMetadata()
+	if err != nil {
+		panic(err)
+	}
+	msiHttpClient := msihttpclient.NewMsiHttpClient(&msiProvider, &vmMetadata, httputil.DefaultRetryBehavior)
+
 	jrdsClient := jrds.NewJrdsClient(msiHttpClient, configuration.GetJrdsBaseUri(), configuration.GetAccountId(), configuration.GetHybridWorkerGroupName())
 	tracer.InitializeTracer(&jrdsClient)
 
