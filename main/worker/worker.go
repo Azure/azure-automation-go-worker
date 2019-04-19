@@ -112,7 +112,7 @@ func main() {
 	}
 	msiHttpClient := msihttpclient.NewMsiHttpClient(&msiProvider, &vmMetadata, httputil.DefaultRetryBehavior)
 
-	jrdsClient := jrds.NewJrdsClient(msiHttpClient, configuration.GetJrdsBaseUri(), configuration.GetAccountId(), configuration.GetHybridWorkerGroupName(), &vmMetadata)
+	jrdsClient := jrds.NewJrdsClient(msiHttpClient, configuration.GetJrdsBaseUri(), configuration.GetAccountId(), configuration.GetHybridWorkerGroupName())
 	tracer.InitializeTracer(&jrdsClient)
 
 	tracer.LogWorkerStarting()
