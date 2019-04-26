@@ -3,7 +3,9 @@
 
 package runtime
 
-import "fmt"
+import (
+	"github.com/Azure/azure-extension-foundation/errorhelper"
+)
 
 const (
 	pythonExtension     Extension = "py"
@@ -43,7 +45,7 @@ var GetLanguage = func(definitionKind DefinitionKind) (Language, error) {
 		language = Language{extension: bashExtension, interpreter: getBashInterpreter()}
 		break
 	default:
-		return Language{}, fmt.Errorf("unsupported language")
+		return Language{}, errorhelper.NewErrorWithStack("unsupported language")
 	}
 	return language, nil
 }

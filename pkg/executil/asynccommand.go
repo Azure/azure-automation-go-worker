@@ -4,7 +4,7 @@
 package executil
 
 import (
-	"fmt"
+	"github.com/Azure/azure-extension-foundation/errorhelper"
 	"io"
 	"os/exec"
 )
@@ -44,7 +44,7 @@ func NewAsyncCommand(stdout func(str string), stderr func(str string), workingDi
 
 func (cmd *AsyncCommand) Kill() error {
 	if cmd.cmd == nil {
-		return fmt.Errorf("nil cmd")
+		return errorhelper.NewErrorWithStack("nil cmd")
 	}
-	return cmd.cmd.Process.Kill()
+	return errorhelper.AddStackToError(cmd.cmd.Process.Kill())
 }

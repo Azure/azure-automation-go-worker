@@ -5,6 +5,7 @@ package executil
 
 import (
 	"bufio"
+	"github.com/Azure/azure-extension-foundation/errorhelper"
 	"io"
 	"os/exec"
 	"syscall"
@@ -36,7 +37,7 @@ func executeAsyncCommand(command *AsyncCommand) error {
 
 	err := command.cmd.Start()
 	if err != nil {
-		return err
+		return errorhelper.AddStackToError(err)
 	}
 
 	command.IsRunning = true

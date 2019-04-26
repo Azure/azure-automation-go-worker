@@ -6,7 +6,9 @@ package jrds
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/Azure/azure-extension-foundation/errorhelper"
 	"github.com/Azure/azure-extension-foundation/httputil"
+	"github.com/pkg/errors"
 	"time"
 )
 
@@ -177,7 +179,7 @@ func (jrds *JrdsClient) issuePostRequest(url string, payload interface{}, out in
 	code, _, err := jrds.client.Post(url, headers, body)
 
 	if err != nil {
-		return NewRequestError(fmt.Sprintf("request error %v : %v\n", url, code))
+		NewRequestError(fmt.Sprintf("request error %v : %v\n%+v", url, code, err))
 	}
 
 	if code == 401 {
@@ -185,7 +187,8 @@ func (jrds *JrdsClient) issuePostRequest(url string, payload interface{}, out in
 	}
 
 	if code != 200 {
-		return NewRequestInvalidStatusError(fmt.Sprintf("invalid return code for %v : %v\n", url, code))
+		return NewRequestInvalidStatusError(
+			errorhelper.NewErrorWithStack(fmt.Sprintf("invalid return code for %v : %v\n", url, code)).Error())
 	}
 
 	if out != nil {
@@ -194,14 +197,14 @@ func (jrds *JrdsClient) issuePostRequest(url string, payload interface{}, out in
 		}
 	}
 
-	return err
+	return errors.WithStack(err)
 }
 
 func (jrds *JrdsClient) issueGetRequest(url string, out interface{}) error {
 	code, body, err := jrds.client.Get(url, jrds.getDefaultHeaders())
 
 	if err != nil {
-		return NewRequestError(fmt.Sprintf("request error %v : %v\n", url, code))
+		return NewRequestError(fmt.Sprintf("request error %v : %v\n%+v", url, code, err))
 	}
 
 	if code == 401 {
@@ -209,14 +212,15 @@ func (jrds *JrdsClient) issueGetRequest(url string, out interface{}) error {
 	}
 
 	if code != 200 {
-		return NewRequestInvalidStatusError(fmt.Sprintf("invalid return code for %v : %v\n", url, code))
+		return NewRequestInvalidStatusError(
+			errorhelper.NewErrorWithStack(fmt.Sprintf("invalid return code for %v : %v\n", url, code)).Error())
 	}
 
 	if out != nil {
 		if err := json.Unmarshal(body, out); err != nil {
-			return fmt.Errorf("failed to unmarshal request response: %v", err)
+			return fmt.Errorf("failed to unmarshal request response: %+v", err)
 		}
 	}
 
-	return err
+	return errors.WithStack(err)
 }

@@ -6,6 +6,7 @@ package runtime
 import (
 	"github.com/Azure/azure-automation-go-worker/internal/jrds"
 	"github.com/Azure/azure-automation-go-worker/pkg/executil"
+	"github.com/Azure/azure-extension-foundation/errorhelper"
 	"os"
 	"path/filepath"
 )
@@ -35,11 +36,7 @@ func NewRuntime(language Language, runbook Runbook, jobData jrds.JobData, workin
 func (runtime *Runtime) Initialize() error {
 	runbookPath := getRunbookPathOnDisk(runtime.workingDirectory, runtime.runbook)
 	err := writeRunbookToDisk(runbookPath, runtime.runbook)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return errorhelper.AddStackToError(err)
 }
 
 func (runtime *Runtime) IsSupported() bool {
@@ -94,12 +91,12 @@ var writeRunbookToDisk = func(path string, runbook Runbook) error {
 	const permission = 0640
 	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, permission)
 	if err != nil {
-		return err
+		return errorhelper.AddStackToError(err)
 	}
 
 	_, err = file.Write([]byte(runbook.Definition))
 	if err != nil {
-		return err
+		return errorhelper.AddStackToError(err)
 	}
 
 	file.Close()
