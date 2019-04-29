@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/Azure/azure-extension-foundation/errorhelper"
 	"github.com/Azure/azure-extension-foundation/httputil"
-	"github.com/pkg/errors"
 	"time"
 )
 
@@ -197,7 +196,7 @@ func (jrds *JrdsClient) issuePostRequest(url string, payload interface{}, out in
 		}
 	}
 
-	return errors.WithStack(err)
+	return err
 }
 
 func (jrds *JrdsClient) issueGetRequest(url string, out interface{}) error {
@@ -222,5 +221,5 @@ func (jrds *JrdsClient) issueGetRequest(url string, out interface{}) error {
 		}
 	}
 
-	return errors.WithStack(err)
+	return err
 }

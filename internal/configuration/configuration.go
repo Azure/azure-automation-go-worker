@@ -107,18 +107,12 @@ var getEnvironmentConfiguration = func() Configuration {
 
 var SerializeConfiguration = func(configuration *Configuration) ([]byte, error) {
 	value, err := json.Marshal(configuration)
-	if err != nil {
-		return value, errorhelper.AddStackToError(err)
-	}
-	return value, err
+	return value, errorhelper.AddStackToError(err)
 }
 
 var DeserializeConfiguration = func(data []byte, configuration *Configuration) error {
 	err := json.Unmarshal(data, &configuration)
-	if err != nil {
-		return errorhelper.AddStackToError(err)
-	}
-	return err
+	return errorhelper.AddStackToError(err)
 }
 
 var getDefaultConfiguration = func() Configuration {
