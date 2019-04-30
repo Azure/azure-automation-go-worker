@@ -54,7 +54,8 @@ var writeToDisk = func(msg string) {
 	}
 
 	// rotate if needed; only keep 2 iteration of log file
-	if info.Size() > int64(math.Pow(1, 7)) {
+	// around 10 MB
+	if info.Size() > int64(math.Pow(10, 7)) {
 		// rotate
 		file.Close()
 		os.Rename(logPath, fmt.Sprintf("%v.1", logPath))

@@ -5,6 +5,8 @@ package configuration
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/Azure/azure-extension-foundation/errorhelper"
 	"io/ioutil"
 	"os"
 )
@@ -68,7 +70,7 @@ func GetConfiguration() Configuration {
 var readDiskConfiguration = func(path string) ([]byte, error) {
 	content, err := ioutil.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return nil, errorhelper.AddStackToError(err)
 	}
 
 	return content, nil
@@ -77,12 +79,12 @@ var readDiskConfiguration = func(path string) ([]byte, error) {
 var setConfiguration = func(config *Configuration) {
 	configuration, err := SerializeConfiguration(config)
 	if err != nil {
-		panic("unable to serialize configuration from environment")
+		panic(fmt.Sprintf("unable to serialize configuration from environment\n%+v", err))
 	}
 
 	err = os.Setenv(EnvironmentConfigurationKey, string(configuration))
 	if err != nil {
-		panic("unable to set configuration to environment")
+		panic(fmt.Sprintf("unable to set configuration to environment\n%+v", err))
 	}
 }
 
@@ -97,18 +99,20 @@ var getEnvironmentConfiguration = func() Configuration {
 	if exists {
 		err := DeserializeConfiguration([]byte(value), &configuration)
 		if err != nil {
-			panic("unable to deserialize configuration from environment")
+			panic(fmt.Sprintf("unable to deserialize configuration from environment\n%+v", err))
 		}
 	}
 	return configuration
 }
 
 var SerializeConfiguration = func(configuration *Configuration) ([]byte, error) {
-	return json.Marshal(configuration)
+	value, err := json.Marshal(configuration)
+	return value, errorhelper.AddStackToError(err)
 }
 
 var DeserializeConfiguration = func(data []byte, configuration *Configuration) error {
-	return json.Unmarshal(data, &configuration)
+	err := json.Unmarshal(data, &configuration)
+	return errorhelper.AddStackToError(err)
 }
 
 var getDefaultConfiguration = func() Configuration {

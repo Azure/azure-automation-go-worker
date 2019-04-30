@@ -5,6 +5,7 @@ import (
 	"github.com/Azure/azure-automation-go-worker/internal/configuration"
 	"github.com/Azure/azure-automation-go-worker/internal/tracer"
 	"github.com/Azure/azure-automation-go-worker/pkg/executil"
+	"github.com/Azure/azure-extension-foundation/errorhelper"
 	"os"
 	"path/filepath"
 	"strings"
@@ -41,7 +42,7 @@ func (s *Sandbox) CreateBaseDirectory() error {
 	const permission = 0750
 	err := os.MkdirAll(s.workingDirectory, permission) // TODO: change sb permission
 	if err != nil {
-		return err
+		return errorhelper.AddStackToError(err)
 	}
 
 	return nil
@@ -78,7 +79,7 @@ func (s *Sandbox) Cleanup() error {
 
 	err := os.RemoveAll(s.workingDirectory)
 	if err != nil {
-		return err
+		return errorhelper.AddStackToError(err)
 	}
 
 	return nil

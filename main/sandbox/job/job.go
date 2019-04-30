@@ -9,6 +9,7 @@ import (
 	"github.com/Azure/azure-automation-go-worker/internal/jrds"
 	"github.com/Azure/azure-automation-go-worker/internal/tracer"
 	"github.com/Azure/azure-automation-go-worker/main/sandbox/runtime"
+	"github.com/Azure/azure-extension-foundation/errorhelper"
 	"os"
 	"path/filepath"
 	"time"
@@ -49,7 +50,7 @@ type jrdsClient interface {
 func NewJob(sandboxId string, jobData jrds.JobData, jrdsClient jrdsClient) Job {
 	workingDirectory := filepath.Join(configuration.GetWorkingDirectory(), *jobData.JobId)
 	err := os.MkdirAll(workingDirectory, 0750)
-	panicOnError("Unable to create job working directory", err)
+	panicOnError("Unable to create job working directory", errorhelper.AddStackToError(err))
 
 	return Job{
 		Id:               *jobData.JobId,

@@ -47,14 +47,14 @@ func IsSignatureValid(signedFilePath string, outputFilePath string, keyrings []s
 		err := cmd.CommandError
 
 		if err != nil {
-			// TODO: trace signature validation success
+			// TODO: trace signature validation failure
 			return false, NewGpgExecuteError(err.Error())
 		}
 		if ret != 0 {
 			return false, NewGpgExecuteError(fmt.Sprintf("Gpg execution returned code: %v", ret))
 		}
 		return true, nil
-		// TODO: trace signature validation failure
+		// TODO: trace signature validation success
 	}
 	//No GPG keyring was able to verify the signed file
 	return false, nil
